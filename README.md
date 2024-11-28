@@ -1,3 +1,9 @@
 # SFHmergers
 A code implementation for have SFH in galaxy merger using photmetry
-SDSS, WISE, GALEX, 2MASS
+'PS1','SDSS','GALEX','2MASS','WISE','unWISE','LegacySurvey','VISTA','SPLUS','UKIDSS'
+discarted surveys: DES, Spitzer, HST ....
+
+
+
+comentarios:
+Añadir limpieza en aperturas como en hp

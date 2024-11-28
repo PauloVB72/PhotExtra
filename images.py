@@ -56,15 +56,16 @@ class Get_images(get_surveys):
 
         try:
             
-            self.surveys = parameters(surveys_init,position,size)
+            self.surveys = parameters(surveys_init,position,size).check_validity()
             self.position = position
             self.size = size
 
         except:
-            warnings
+            warnings()
         
 class get_surveys():
-
+    def __init__(self):
+        pass
 # PS1
 
 # ----------------------------------------
@@ -89,10 +90,6 @@ class get_surveys():
             Astropy table with the results.
         """
         survey = "PS1"
-        
-        check_filters_validity(filters, survey)
-        if filters is None:
-            filters = get_survey_filters(survey)
 
         pixel_scale = survey_pixel_scale(survey)
         if isinstance(size, (float, int)):

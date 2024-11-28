@@ -57,7 +57,7 @@ class parameters:
         return self.surveys
     
     def check_validity(self):
-        
+        # validation of the initial parameters
         for srv in self.surveys.keys():
             if srv in np.array(config['survey']):
                 for flt in self.surveys[srv]:
@@ -68,8 +68,10 @@ class parameters:
             else:
                 warnings()
         return self.survey_values()
-
     
 
+def survey_pixel_scale()
+    
+    
 #if __name__ == "__main__":
  #   parameters(data,position,size).survey_values()
