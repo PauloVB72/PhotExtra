@@ -4,9 +4,9 @@ import pandas as pd
 import pathlib
 import numpy as np
 from astropy import wcs, units as u
-
 import warnings
 from astropy.utils.exceptions import AstropyWarning
+
 
 config = pd.read_csv('prm_config.csv')
 
@@ -57,6 +57,7 @@ class parameters:
         return self.surveys
     
     def check_validity(self):
+        global config
         # validation of the initial parameters
         for srv in self.surveys.keys():
             if srv in np.array(config['survey']):
@@ -70,7 +71,7 @@ class parameters:
         return self.survey_values()
     
 
-def survey_pixel_scale()
+
     
     
 #if __name__ == "__main__":

@@ -33,66 +33,54 @@ esahubble = ESAHubble()
 
 from reproject import reproject_interp
 from params import parameters
-#from hostphot._constants import workdir
-#from hostphot.utils import (
-#    get_survey_filters,
-#    clean_dir,
-#    check_work_dir,
-#    check_survey_validity,
-#    check_filters_validity,
-#    check_HST_filters,
-#    survey_pixel_scale,
-#)
-#import hostphot
-#hostphot_path = Path(hostphot.__path__[0])
+from utils import folder_exists,directory
+from utils import survey_pixel_scale
+import Photsfh
+
+repository_path = Path(Photsfh.__path__[0])
+
 
 import warnings
 from astropy.utils.exceptions import AstropyWarning
 
 # 
 
-class Get_images(get_surveys):
-    def __init__(self, position, size, surveys_init):
+class get_images(get_surveys):
+    def __init__(self, position, size, surveys_init,versions = None):
+
+        super.__init__()
+
 
         try:
             
             self.surveys = parameters(surveys_init,position,size).check_validity()
-            self.position = position
+            self.ra, self.dec = position
             self.size = size
 
         except:
             warnings()
         
 class get_surveys():
-    def __init__(self):
+
+    def __init__(versions = None):
         pass
-# PS1
 
-# ----------------------------------------
-    def query_ps1(ra, dec, size=3, filters=None):
+    def getimg_PS1(self, ra ,dec, size =3, filters = None):
 
-        """Query ps1filenames.py service to get a list of images
-
-        Parameters
-        ----------
-        ra: float
-            Right Ascension in degrees.
-        dec: float
-            Declination in degrees.
-        size: float or ~astropy.units.Quantity, default ``3``
-            Image size. If a float is given, the units are assumed to be arcmin.
-        filters: str, default ``None``
-            Filters to use. If ``None``, uses ``grizy``.
-
-        Returns
-        -------
-        table: astropy Table
-            Astropy table with the results.
         """
+        
+
+                           PS1
+        
+        
+        """
+        
         survey = "PS1"
 
-        pixel_scale = survey_pixel_scale(survey)
+        pixel_scale = survey_pixel_scale(survey)      
+
         if isinstance(size, (float, int)):
+            
             size_arcsec = (size * u.arcmin).to(u.arcsec).value
         else:
             size_arcsec = size.to(u.arcsec).value
@@ -104,44 +92,7 @@ class get_surveys():
             f"filters={filters}"
         )
 
-        table = Table.read(url, format="ascii")
-
-        return table
-
-
-    def get_PS1_urls(ra, dec, size=3, filters=None):
-        """Get URLs for images obtained with :func:`query_ps1()`.
-
-        Parameters
-        ----------
-        ra: float
-            Right Ascension in degrees.
-        dec: float
-            Declination in degrees.
-        size: float or ~astropy.units.Quantity, default ``3``
-            Image size. If a float is given, the units are assumed to be arcmin.
-        filters: str, default ``None``
-            Filters to use. If ``None``, uses ``grizy``.
-
-        Returns
-        -------
-        url_list: list
-            List of URLs for the fits images.
-        """
-        survey = "PS1"
-        check_filters_validity(filters, survey)
-        if filters is None:
-            filters = get_survey_filters(survey)
-
-        pixel_scale = survey_pixel_scale(survey)
-        if isinstance(size, (float, int)):
-            size_arcsec = (size * u.arcmin).to(u.arcsec).value
-        else:
-            size_arcsec = size.to(u.arcsec).value
-
-        size_pixels = int(size_arcsec / pixel_scale)
-
-        table = query_ps1(ra, dec, size=size, filters=filters)
+        table = Table.read(url, format="ascii")    
         url = (
             "https://ps1images.stsci.edu/cgi-bin/fitscut.cgi?"
             f"ra={ra}&dec={dec}&size={size_pixels}&format=fits"
@@ -156,197 +107,21 @@ class get_surveys():
         for filename in table["filename"]:
             url_list.append(base_url + filename)
 
-        return url_list
-
-
-    def get_PS1_images(ra, dec, size=3, filters=None):
-        """Gets PS1 fits images for the given coordinates and
-        filters.
-
-        Parameters
-        ----------
-        ra: float
-            Right Ascension in degrees.
-        dec: float
-            Declination in degrees.
-        size: float or ~astropy.units.Quantity, default ``3``
-            Image size. If a float is given, the units are assumed to be arcmin.
-        filters: str, default ``None``
-            Filters to use. If ``None``, uses ``grizy``.
-
-        Returns
-        -------
-        fits_files: list
-            List of fits images.
-        """
-        survey = "PS1"
-        if filters is None:
-            filters = get_survey_filters(survey)
-        check_filters_validity(filters, survey)
-
-        fits_url = get_PS1_urls(ra, dec, size, filters)
-
         hdu_list = []
         for url, filt in zip(fits_url, filters):
             hdu = fits.open(url)
             hdu_list.append(hdu)
-
         return hdu_list
 
+    def getimg_SDSS(self, ra ,dec, size =3, filters = None, version=None):
 
-    # DES
-    # ----------------------------------------
-    def get_DES_urls(ra, dec, fov, filters="grizY"):
-        """Obtains the URLs of the DES images+weights with the
-        largest exposure times in the given filters.
-
-        Parameters
-        ----------
-        ra: float
-            Right ascension in degrees.
-        dec: float
-            Declination in degrees.
-        fov: float
-            Field of view in degrees.
-        filters: str, default ``None``
-            Filters to use. If ``None``, uses ``grizY``.
-
-        Returns
-        -------
-        url_list: list
-            List of URLs with DES images.
-        url_w_list: list
-            List of URLs with DES images weights.
         """
-        if filters is None:
-            filters = get_survey_filters("DES")
-        check_filters_validity(filters, "DES")
-
-        des_access_url = "https://datalab.noirlab.edu/sia/des_dr1"
-        svc = sia.SIAService(des_access_url)
-        imgs_table = svc.search(
-            (ra, dec), (fov / np.cos(dec * np.pi / 180), fov), verbosity=2
-        )
-        if len(imgs_table) == 0:
-            print(("Warning: empty table returned for " f"ra={ra}, dec={dec}"))
-            return None, None
-
-        imgs_df = pd.DataFrame(imgs_table)
-
-        cond_stack = imgs_df["proctype"] == "Stack"
-        cond_image = imgs_df["prodtype"] == "image"
-        cond_weight = imgs_df["prodtype"] == "weight"
-
-        url_list = []
-        url_w_list = []
-        for filt in filters:
-            cond_filt = imgs_df["obs_bandpass"] == filt
-
-            selected_images = imgs_df[cond_filt & (cond_stack & cond_image)]
-            selected_weights = imgs_df[cond_filt & (cond_stack & cond_weight)]
-
-            if len(selected_images) > 0:
-                # pick image with the longest exposure time
-                max_exptime = np.argmax(selected_images["exptime"])
-                row = selected_images.iloc[max_exptime]
-                url = row["access_url"]  # get the download URL
-
-                if len(selected_weights) == 0:
-                    url_w = None
-                else:
-                    max_exptime = np.argmax(selected_weights["exptime"])
-                    row_w = selected_weights.iloc[max_exptime]
-                    url_w = row_w["access_url"]
-            else:
-                url = url_w = None
-            url_list.append(url)
-            url_w_list.append(url_w)
-
-        return url_list, url_w_list
-
-
-    def get_DES_images(ra, dec, size=3, filters=None):
-        """Gets DES fits images for the given coordinates and
-        filters.
-
-        Parameters
-        ----------
-        ra: float
-            Right Ascension in degrees.
-        dec: float
-            Declination in degrees.
-        size: float or ~astropy.units.Quantity, default ``3``
-            Image size. If a float is given, the units are assumed to be arcmin.
-        filters: str, default ``None``
-            Filters to use. If ``None``, uses ``grizY``.
-
-        Returns
-        -------
-        hdu_list: list
-            List of fits images.
-        """
-        survey = "DES"
-        if filters is None:
-            filters = get_survey_filters(survey)
-        check_filters_validity(filters, survey)
-
-        if isinstance(size, (float, int)):
-            fov = (size * u.arcmin).to(u.degree).value
-        else:
-            fov = size.to(u.degree).value
-
-        url_list, url_w_list = get_DES_urls(ra, dec, fov, filters)
-
-        if url_list is None:
-            return None
-
-        hdu_list = []
-        for url, url_w in zip(url_list, url_w_list):
-            # combine image+weights on a single fits file
-            image_hdu = fits.open(url)
-            hdu = fits.PrimaryHDU(image_hdu[0].data, header=image_hdu[0].header)
-            if url_w is None:
-                hdu_sublist = fits.HDUList([hdu])
-            else:
-                weight_hdu = fits.open(url_w)
-                hdu_err = fits.ImageHDU(
-                    weight_hdu[0].data, header=weight_hdu[0].header
-                )
-                hdu_sublist = fits.HDUList([hdu, hdu_err])
-            hdu_list.append(hdu_sublist)
-
-        return hdu_list
-
-
-    # SDSS
-    # ----------------------------------------
-    def get_SDSS_images(ra, dec, size=3, filters=None, version=None):
-        """Downloads a set of SDSS fits images for a given set
-        of coordinates and filters using SkyView.
-
-        Parameters
-        ----------
-        ra: str or float
-            Right ascension in degrees.
-        dec: str or float
-            Declination in degrees.
-        size: float or ~astropy.units.Quantity, default ``3``
-            Image size. If a float is given, the units are assumed to be arcmin.
-        filters: str, default ``None``
-            Filters to use. If ``None``, uses ``ugriz``.
-        version: str, default ``None``
-            Data release version to use. If not given, use the latest one (``dr17``).
-
-        Return
-        ------
-        hdu_list: list
-            List with fits images for the given filters.
-            `None` is returned if no image is found.
+        
+                        SDSS
+        
         """
         survey = "SDSS"
-        if filters is None:
-            filters = get_survey_filters(survey)
-        check_filters_validity(filters, survey)
+
         # check data release version
         if version is None:
             version = "dr17"
@@ -408,41 +183,11 @@ class get_surveys():
 
         return hdu_list
 
+    def getimg_GALEX(self, ra ,dec, size =3, filters = None, version=None):
 
-    # GALEX
-    # ----------------------------------------
-    def get_GALEX_images(ra, dec, size=3, filters=None, version=None):
-        """Downloads a set of GALEX fits images for a given set
-        of coordinates and filters.
 
-        Parameters
-        ----------
-        ra: str or float
-            Right ascension in degrees.
-        dec: str or float
-            Declination in degrees.
-        size: float or ~astropy.units.Quantity, default ``3``
-            Image size. If a float is given, the units are assumed to be arcmin.
-        filters: str, default ``None``
-            Filters to use. If ``None``, uses ``FUV, NUV``.
-        version: str, default ``None``
-            Version of GALEX images. Either Deep (``DIS``), Medium (``MIS``) or
-            All-Sky Imaging Survey (``AIS``), or Nearby Galaxy Survey (``NGS``) or
-            Guest Investigator Survey (``GII``). If ``None``, take the image with the
-            longest exposure time.
 
-        Return
-        ------
-        hdu_list: list
-            List with fits images for the given filters.
-            ``None`` is returned if no image is found.
-        """
         survey = "GALEX"
-        if filters is None:
-            filters = get_survey_filters(survey)
-        if isinstance(filters, str):
-            filters = [filters]
-        check_filters_validity(filters, survey)
 
         if isinstance(size, (float, int)):
             size_arcsec = (size * u.arcmin).to(u.arcsec)
@@ -545,52 +290,9 @@ class get_surveys():
         return hdu_list
 
 
-    # WISE
-    # ----------------------------------------
-    def get_used_image(header):
-        """Obtains the name of the image downloaded by SkyView.
+    def getimg_WISE(self, ra ,dec, size =3, filters = None, version=None):
 
-        Parameters
-        ----------
-        header: fits header
-            Header of an image.
-
-        Returns
-        -------
-        used_image: str
-            Name of the image.
-        """
-        image_line = header["HISTORY"][-3]
-        used_image = image_line.split("/")[-1].split("-")[0]
-
-        return used_image
-
-
-    def get_WISE_images(ra, dec, size=3, filters=None):
-        """Downloads a set of WISE fits images for a given set
-        of coordinates and filters.
-
-        Parameters
-        ----------
-        ra: str or float
-            Right ascension in degrees.
-        dec: str or float
-            Declination in degrees.
-        size: float or ~astropy.units.Quantity, default ``3``
-            Image size. If a float is given, the units are assumed to be arcmin.
-        filters: str, default ``None``
-            Filters to use. If ``None``, uses all WISE filters.
-
-        Return
-        ------
-        hdu_list: list
-            List with fits images for the given filters.
-            `None` is returned if no image is found.
-        """
         survey = "WISE"
-        if filters is None:
-            filters = get_survey_filters(survey)
-        check_filters_validity(filters, survey)
 
         if isinstance(size, (float, int)):
             size_arcsec = (size * u.arcmin).to(u.arcsec)
@@ -612,8 +314,9 @@ class get_surveys():
                 survey="WISE 3.4",
             )
             header = skyview_fits[0][0].header
-
-            coadd_id = get_used_image(header)
+            image_line = header["HISTORY"][-3]
+            used_image = image_line.split("/")[-1].split("-")[0]
+            coadd_id = used_image
             coadd_id1 = coadd_id[:4]
             coadd_id2 = coadd_id1[:2]
 
@@ -636,32 +339,12 @@ class get_surveys():
 
         return hdu_list
 
+   
+    def getimg_unWISE(self, ra ,dec, size =3, filters = None, version="allwise"):
 
-    def get_unWISE_images(ra, dec, size=3, filters=None, version="allwise"):
-        """Downloads a set of unWISE fits images for a given set
-        of coordinates and filters.
-
-        Parameters
-        ----------
-        ra: str or float
-            Right ascension in degrees.
-        dec: str or float
-            Declination in degrees.
-        size: float or ~astropy.units.Quantity, default ``3``
-            Image size. If a float is given, the units are assumed to be arcmin.
-        filters: str, default ``None``
-            Filters to use. If ``None``, uses all WISE filters.
-        version: str, default ``allwise``
-            Version of the unWISE images. Either ``allwise`` or ``neo{i}`` for
-            {i} = 1 to 7.
-
-        Return
-        ------
-        hdu_list: list
-            List with fits images for the given filters.
-            `None` is returned if no image is found.
-        """
         survey = "unWISE"
+
+    
         if version is None:
             version = "allwise"
         else:
@@ -671,9 +354,6 @@ class get_surveys():
             assert (
                 version in all_versions
             ), f"Not a valid version ({version}): {all_versions}"
-        if filters is None:
-            filters = get_survey_filters(survey)
-        check_filters_validity(filters, survey)
 
         if "neo" in version:
             # these only have W1 and W2 data
@@ -724,33 +404,9 @@ class get_surveys():
         return hdu_list
 
 
-    # 2MASS
-    # ----------------------------------------
-    def get_2MASS_images(ra, dec, size=3, filters=None):
-        """Downloads a set of 2MASS fits images for a given set
-        of coordinates and filters.
+    def getimg_2MASS(self, ra ,dec, size =3, filters = None):
 
-        Parameters
-        ----------
-        ra: str or float
-            Right ascension in degrees.
-        dec: str or float
-            Declination in degrees.
-        size: float or ~astropy.units.Quantity, default ``3``
-            Image size. If a float is given, the units are assumed to be arcmin.
-        filters: str, default ``None``
-            Filters to use. If ``None``, uses ``FUV, NUV``.
-
-        Return
-        ------
-        hdu_list: list
-            List with fits images for the given filters.
-            `None` is returned if no image is found.
-        """
         survey = "2MASS"
-        if filters is None:
-            filters = get_survey_filters(survey)
-        check_filters_validity(filters, survey)
 
         if isinstance(size, (float, int)):
             size_degree = (size * u.arcmin).to(u.degree)
@@ -826,34 +482,9 @@ class get_surveys():
 
         return hdu_list
 
-
-    # Legacy Survey
-    def get_LegacySurvey_images(ra, dec, size=3, filters=None, version="dr10"):
-        """Gets Legacy Survey fits images for the given coordinates and
-        filters.
-
-        Parameters
-        ----------
-        ra: float
-            Right Ascension in degrees.
-        dec: float
-            Declination in degrees.
-        size: float or ~astropy.units.Quantity, default ``3``
-            Image size. If a float is given, the units are assumed to be arcmin.
-        filters: str, default ``None``
-            Filters to use. If ``None``, uses ``grz``.
-        version: str, default ``dr10``
-            Data release version. E.g. ``dr10``, ``dr9``, ``dr8``, etc..
-
-        Returns
-        -------
-        fits_files: list
-            List of fits images.
-        """
+    def getimg_LegacySurvey(self, ra ,dec, size =3, filters = None):
+  
         survey = "LegacySurvey"
-        if filters is None:
-            filters = get_survey_filters(survey)
-            check_filters_validity(filters, survey)
 
         pixel_scale = survey_pixel_scale(survey)
         if isinstance(size, (float, int)):
@@ -889,127 +520,11 @@ class get_surveys():
             hdu_list.append(fits.HDUList([hdu, hdu_invvar]))
 
         return hdu_list
+    
+    def getimg_VISTA(self, ra ,dec, size =3, filters = None,version = None):
 
-
-    # Spitzer
-    def get_Spitzer_images(ra, dec, size=3, filters=None):
-        """Gets Spitzer fits images for the given coordinates and
-        filters.
-
-        Parameters
-        ----------
-        ra: float
-            Right Ascension in degrees.
-        dec: float
-            Declination in degrees.
-        size: float or ~astropy.units.Quantity, default ``3``
-            Image size. If a float is given, the units are assumed to be arcmin.
-        filters: str, default ``None``
-            Filters to use. If ``None``, uses ``IRAC.1, IRAC.2, IRAC.3, IRAC.4, MIPS.1``.
-
-        Returns
-        -------
-        fits_files: list
-            List of fits images.
-        """
-        survey = "Spitzer"
-        if filters is None:
-            filters = get_survey_filters(survey)
-        check_filters_validity(filters, survey)
-
-        pixel_scale = survey_pixel_scale(survey, "IRAC.1")  # IRAC resolution
-        if isinstance(size, (float, int)):
-            size_arcsec = (size * u.arcmin).to(u.arcsec).value
-        else:
-            size_arcsec = size.to(u.arcsec).value
-        size_pixels = int(size_arcsec / pixel_scale)
-
-        base_url = "https://irsa.ipac.caltech.edu/cgi-bin/Cutouts/nph-cutouts?"
-        locstr = f"{str(ra)}+{str(dec)}+eq"
-
-        mission_dict = {
-            "mission": "SEIP",
-            "min_size": "18",
-            "max_size": "1800",
-            "units": "arcsec",
-            "locstr": locstr,
-            "sizeX": size_pixels,
-            "ntable_cutouts": "1",
-            "cutouttbl1": "science",
-            "mode": "PI",  # XML output file
-        }
-
-        # check image size
-        if size_pixels < int(mission_dict["min_size"]):
-            mission_dict["sizeX"] = int(mission_dict["min_size"])
-            print(
-                f'Image cannot be smaller than {mission_dict["min_size"]} arcsec (using this value)'
-            )
-        elif size_pixels > int(mission_dict["max_size"]):
-            mission_dict["sizeX"] = int(mission_dict["max_size"])
-            print(
-                f'Image cannot be larger than {mission_dict["max_size"]} arcsec (using this value)'
-            )
-
-        mission_url = "&".join(
-            [f"{key}={val}" for key, val in mission_dict.items()]
-        )
-        url = base_url + mission_url
-
-        response = requests.get(url)
-        list_text = response.text.split()
-
-        # find the fits file for each fitler (None if not found)
-        files_dict = {filt: None for filt in filters}
-        for filt in filters:
-            for line in list_text:
-                if filt in line and line.endswith(".mosaic.fits"):
-                    files_dict[filt] = line
-                    # pick the first image and move to the next filter
-                    break
-
-        hdu_list = []
-        for filt, file in files_dict.items():
-            if file is not None:
-                hdu = fits.open(line)
-                hdu[0].header["MAGZP"] = hdu[0].header["ZPAB"]
-                hdu_list.append(hdu)
-            else:
-                hdu_list.append(None)
-
-        return hdu_list
-
-
-    # VISTA
-    def get_VISTA_images(ra, dec, size=3, filters=None, version="VHS"):
-        """Gets VISTA fits images for the given coordinates and
-        filters.
-
-        Note: the different surveys included in VISTA cover different
-        parts of the sky and do not necessarily contain the same filters.
-
-        Parameters
-        ----------
-        ra: float
-            Right Ascension in degrees.
-        dec: float
-            Declination in degrees.
-        size: float or ~astropy.units.Quantity, default ``3``
-            Image size. If a float is given, the units are assumed to be arcmin.
-        filters: str, default ``None``
-            Filters to use. If ``None``, uses ``Z, Y, J, H, Ks``.
-        version: str, default ``VHS``
-            Survey to use: ``VHS``, ``VIDEO`` or ``VIKING``.
-
-        Returns
-        -------
-        fits_files: list
-            List of fits images.
-        """
         survey = "VISTA"
-        if filters is None:
-            filters = get_survey_filters(survey)
-        check_filters_validity(filters, survey)
+        
 
         if not isinstance(size, (float, int)):
             size = size.to(u.arcmin).value
@@ -1089,314 +604,17 @@ class get_surveys():
         return hdu_list
 
 
-    # HST
-    # ----------------------------------------
-    def update_HST_header(hdu):
-        """Updates the HST image header with the necessary keywords.
+    def getimg_SPLUS(self, ra, dec, size, filters=None):
 
-        Parameters
-        ----------
-        hdu : Header Data Unit.
-            HST FITS image.
-        """
-        # Drizzlepac images have the info on hdu[0]
-        # MAST-archive images have the info on hdu[1]
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", AstropyWarning)
-            if "PHOTFLAM" not in hdu[0].header:
-                # MAST image: move things to hdu[0] to homogenise
-                img_wcs = wcs.WCS(hdu[1].header)
-                hdu[0].header.update(img_wcs.to_header())
-                hdu[0].header["PHOTFLAM"] = hdu[1].header["PHOTFLAM"]
-                hdu[0].header["PHOTPLAM"] = hdu[1].header["PHOTPLAM"]
-                hdu[0].data = hdu[1].data
-
-        # add zeropoints
-        # https://www.stsci.edu/hst/instrumentation/acs/data-analysis/zeropoints
-        photflam = hdu[0].header["PHOTFLAM"]
-        photplam = hdu[0].header["PHOTPLAM"]
-        hdu[0].header["MAGZP"] = (
-            -2.5 * np.log10(photflam) - 5 * np.log10(photplam) - 2.408
-        )
-
-
-    def set_HST_image(file, filt, name):
-        """Moves a previously downloaded HST image into the work directory.
-
-        The image's header is updated with the necessary keywords to obtain
-        photometry and is also moved under the objects directory inside the
-        work directory.
-
-        HST images take very long to download, so the user might prefer to
-        download the images manually and then use this function to include
-        the image into the workflow.
-
-        Parameters
-        ----------
-        file : str
-            HST image to use.
-        filt : str
-            HST filter, e.g. ``WFC3_UVIS_F275W``.
-        name : str
-            Object's name.
-        """
-        check_work_dir(workdir)
-        obj_dir = os.path.join(workdir, name)
-        if not os.path.isdir(obj_dir):
-            os.mkdir(obj_dir)
-
-        hdu = fits.open(file)
-        update_HST_header(hdu)
-        outfile = os.path.join(obj_dir, f"HST_{filt}.fits")
-        hdu.writeto(outfile, overwrite=True)
-
-
-    def get_HST_images(ra, dec, size=3, filt=None):
-        """Downloads a set of HST fits images for a given set
-        of coordinates and filters using the MAST archive.
-
-        Parameters
-        ----------
-        ra: str or float
-            Right ascension in degrees.
-        dec: str or float
-            Declination in degrees.
-        size: float or ~astropy.units.Quantity, default ``3``
-            Image size. If a float is given, the units are assumed to be arcmin.
-        filt: str, default ``None``
-            Filter to use, e.g. ``WFC3_UVIS_F225W``.
-
-        Return
-        ------
-        hdu_list: list
-            List with fits image for the given filter.
-            `None` is returned if no image is found.
-        """
-        global esahubble
-        esahubble.get_status_messages()
-        check_HST_filters(filt)
-
-        # separate the instrument name from the actual filter
-        split_filt = filt.split("_")
-        if len(split_filt) == 2:
-            filt = split_filt[-1]
-            instrument = split_filt[0]
-        elif len(split_filt) == 3:
-            filt = split_filt[-1]
-            instrument = f"{split_filt[0]}/{split_filt[1]}"
-        else:
-            raise ValueError(f"Incorrect filter name: {filt}")
-
-        if isinstance(size, (float, int)):
-            size_arcsec = (size * u.arcmin).to(u.arcsec)
-        else:
-            size_arcsec = size.to(u.arcsec)
-        size_arcsec = size_arcsec.value
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", AstropyWarning)
-            coords = SkyCoord(
-                ra=ra, dec=dec, unit=(u.degree, u.degree), frame="icrs"
-            )
-
-        version = None
-        if version == "HLA":
-            # This does not seem to be faster
-            fov = 0.2  # field-of-view win degrees
-            access_url = " https://hla.stsci.edu/cgi-bin/hlaSIAP.cgi"
-            svc = sia.SIAService(access_url)
-            imgs_table = svc.search(
-                (ra, dec), (fov / np.cos(dec * np.pi / 180), fov), verbosity=2
-            )
-
-            obs_df = pd.DataFrame(imgs_table)
-            obs_df = obs_df[obs_df.Mode == "IMAGE"]
-            obs_df = obs_df[obs_df.Format.str.endswith("fits")]
-            obs_df = obs_df[obs_df.Detector == instrument]
-            obs_df = obs_df[obs_df.Spectral_Elt == filt]
-            obs_df = obs_df[obs_df.ExpTime == obs_df.ExpTime.max()]
-
-            hdu = fits.open(obs_df.URL.values[0])
-        else:
-            result = esahubble.cone_search_criteria(
-                radius=3,
-                coordinates=coords,
-                calibration_level="PRODUCT",
-                data_product_type="image",
-                instrument_name=instrument,
-                filters=filt,
-                async_job=True,
-            )
-
-            obs_df = result.to_pandas()
-            obs_df = obs_df[obs_df["filter"] == filt]
-            # get only exposures shorter than one hour
-            obs_df = obs_df[obs_df.exposure_duration < 3600]
-            obs_df.sort_values(
-                by=["exposure_duration"], ascending=False, inplace=True
-            )
-
-            print("Looking for HST images...")
-            filename = f"HST_tmp_{ra}_{dec}"  # the extension is added below
-            for obs_id in obs_df.observation_id:
-                try:
-                    esahubble.download_product(
-                        observation_id=obs_id,
-                        product_type="SCIENCE",
-                        calibration_level="PRODUCT",
-                        filename=filename,
-                    )
-                    break
-                except:
-                    pass
-
-            temp_file = f"{filename}.fits.gz"
-            if os.path.isfile(temp_file) is False:
-                return None
-
-            temp_dir = filename  # same name as the extension-less file above
-            with zipfile.ZipFile(temp_file, "r") as zip_ref:
-                zip_ref.extractall(temp_dir)
-                fits_file = [
-                    file
-                    for file in glob.glob(f"{temp_dir}/**", recursive=True)
-                    if file.endswith(".gz")
-                ][0]
-
-            hdu = fits.open(fits_file)
-
-            # remove the temporary files and directory
-            os.remove(temp_file)
-            shutil.rmtree(temp_dir, ignore_errors=True)
-
-        update_HST_header(hdu)
-        hdu_list = [hdu]
-
-        return hdu_list
-
-    # SkyMapper
-    def get_SkyMapper_urls(ra, dec, fov, filters="uvgriz"):
-        """Obtains the URLs of the SkyMapper images.
-        
-        The images closest to the given coordinates are retrieved 
-
-        Parameters
-        ----------
-        ra: float
-            Right ascension in degrees.
-        dec: float
-            Declination in degrees.
-        fov: float
-            Field of view in degrees.
-        filters: str, default ``None``
-            Filters to use. If ``None``, uses ``uvgriz``.
-
-        Returns
-        -------
-        url_list: list
-            List of URLs with SkyMapper images.
-        """
-        sm_url = "https://api.skymapper.nci.org.au/public/siap/dr4/query"
-        svc = sia.SIAService(sm_url)
-        imgs_table = svc.search(
-            (ra, dec), (fov / np.cos(dec * np.pi / 180), fov), verbosity=2
-        )
-        if len(imgs_table) == 0:
-            print(("Warning: empty table returned for " f"ra={ra}, dec={dec}"))
-            return None
-
-        imgs_df = pd.DataFrame(imgs_table)
-        imgs_df = imgs_df[imgs_df.format.str.endswith('fits')]
-        if len(imgs_df) == 0:
-            return None
-
-        url_list = []
-        for filt in filters:
-            filt_df = imgs_df[imgs_df.band==filt]
-            # obtain the images with largest exposure times and file size
-            # and lowest mean FWHM, as suggested by Christopher Onken, from the SkyMapper Team
-            filt_df = filt_df[filt_df.exptime==filt_df.exptime.max()]
-            filt_df = filt_df[filt_df.filesize==filt_df.filesize.max()]
-            filt_df = filt_df[filt_df.mean_fwhm==filt_df.mean_fwhm.min()]
-            if len(filt_df) == 0:
-                url_list.append(None)
-            else:
-                fits_url = filt_df.get_fits.values[0]
-                url_list.append(fits_url)
-                
-        return url_list
-
-    def get_SkyMapper_images(ra, dec, size=3, filters=None):
-        """Gets SkyMapper fits images for the given coordinates and
-        filters.
-
-        Parameters
-        ----------
-        ra: float
-            Right Ascension in degrees.
-        dec: float
-            Declination in degrees.
-        size: float or ~astropy.units.Quantity, default ``3``
-            Image size. If a float is given, the units are assumed to be arcmin.
-        filters: str, default ``None``
-            Filters to use. If ``None``, uses ``uvgriz``.
-
-        Returns
-        -------
-        hdu_list: list
-            List of fits images.
-        """
-        survey = "SkyMapper"
-        if filters is None:
-            filters = get_survey_filters(survey)
-        check_filters_validity(filters, survey)
+        survey = "SPLUS"
+    
+        splus_url = "https://datalab.noirlab.edu/sia/splus_dr1"
 
         if isinstance(size, (float, int)):
             fov = (size * u.arcmin).to(u.degree).value
         else:
             fov = size.to(u.degree).value
 
-        url_list = get_SkyMapper_urls(ra, dec, fov, filters)
-
-        if url_list is None:
-            return None
-
-        hdu_list = []
-        for url in url_list:
-            if url is None:
-                hdu_list.append(None)
-            else:
-                hdu = fits.open(url)
-                # add zeropoint
-                hdu[0].header['MAGZP'] = hdu[0].header['ZPAPPROX']
-                hdu_list.append(hdu)
-
-        return hdu_list
-
-    # S-Plus
-    def get_SPlus_urls(ra, dec, fov, filters=None):
-        """Obtains the URLs of the S-Plus images.
-        
-        The available filters are: 'F378', 'F395', 'F410', 'F430', 
-        'F515', 'F660', 'F861', 'G', 'I', 'R', 'U', 'Z'.
-
-        Parameters
-        ----------
-        ra: float
-            Right ascension in degrees.
-        dec: float
-            Declination in degrees.
-        fov: float
-            Field of view in degrees.
-        filters: str, default ``None``
-            Filters to use. If ``None``, uses all available filters.
-
-        Returns
-        -------
-        url_list: list
-            List of URLs with S-Plus images.
-        """
-        splus_url = "https://datalab.noirlab.edu/sia/splus_dr1"
         svc = sia.SIAService(splus_url)
         imgs_table = svc.search(
             (ra, dec), (fov / np.cos(dec * np.pi / 180), fov), verbosity=2
@@ -1418,44 +636,8 @@ class get_surveys():
             else:
                 fits_url = filt_df.access_url.values[0]  # first image
                 url_list.append(fits_url)
-                
-        return url_list
 
-    def get_SPLUS_images(ra, dec, size=3, filters=None):
-        """Gets S-Plus fits images for the given coordinates and
-        filters.
-
-        The available filters are: 'F378', 'F395', 'F410', 'F430', 
-        'F515', 'F660', 'F861', 'G', 'I', 'R', 'U', 'Z'.
-
-        Parameters
-        ----------
-        ra: float
-            Right Ascension in degrees.
-        dec: float
-            Declination in degrees.
-        size: float or ~astropy.units.Quantity, default ``3``
-            Image size. If a float is given, the units are assumed to be arcmin.
-        filters: str, default ``None``
-            Filters to use. If ``None``, uses all available filters.
-
-        Returns
-        -------
-        hdu_list: list
-            List of fits images.
-        """
-        global hostphot_path
-        survey = "SPLUS"
-        if filters is None:
-            filters = get_survey_filters(survey)
-        check_filters_validity(filters, survey)
-
-        if isinstance(size, (float, int)):
-            fov = (size * u.arcmin).to(u.degree).value
-        else:
-            fov = size.to(u.degree).value
-
-        url_list = get_SPlus_urls(ra, dec, fov, filters)
+        global repository_path
 
         if url_list is None:
             return None
@@ -1469,7 +651,7 @@ class get_surveys():
 
                 # add zeropoint
                 # file from https://splus.cloud/documentation/dr2_3
-                zps_file = hostphot_path.joinpath('filters', 'SPLUS', 'iDR3_zps.cat')
+                zps_file = repository_path.joinpath('filters', 'SPLUS', 'iDR3_zps.cat')
                 zps_df = pd.read_csv(zps_file, sep='\\s+')
 
                 field = hdu[0].header['OBJECT'].replace('_', '-')
@@ -1484,32 +666,12 @@ class get_surveys():
                 hdu_list.append(hdu)
 
         return hdu_list
+    
 
-    # UKIDSS
-    def get_UKIDSS_images(ra, dec, size=3, filters='ZYJHK'):
-        """Gets UKIDSS fits images for the given coordinates and
-        filters.
+    def getimg_UKIDSS(self, ra, dec, size, filters=None):
 
-        Parameters
-        ----------
-        ra: float
-            Right Ascension in degrees.
-        dec: float
-            Declination in degrees.
-        size: float or ~astropy.units.Quantity, default ``3``
-            Image size. If a float is given, the units are assumed to be arcmin.
-        filters: str, default ``None``
-            Filters to use. If ``None``, uses ``ZYJHK``.
 
-        Returns
-        -------
-        fits_files: list
-            List of fits images.
-        """
         survey = "UKIDSS"
-        if filters is None:
-            filters = get_survey_filters(survey)
-        check_filters_validity(filters, survey)
         
         database = 'UKIDSSDR11PLUS'
         # programme = 'LAS'  # ['UDS', 'GCS', 'GPS', 'DXS', 'LAS']
@@ -1555,36 +717,58 @@ class get_surveys():
         hdu_list = list(hdu_dict.values())
         
         return hdu_list
+    
+    def dowload_img(self,name, ra ,dec, survey, size =3,filters = None,version = None, path = None,overwrite=True,):
+        if path == None:
+            path = name
+        if folder_exists(path) == True:
+            obj_dir = os.path.join(path, name) 
+        else:
+            directory(path)
+            obj_dir = os.path.join(workdir, name) 
 
-    # Check orientation
-    # ------------------
-    def match_wcs(fits_files):
-        """Matches the WCS of all the images, taking the first ones as
-        a reference.
+        if survey == 'PS1':
 
-        Parameters
-        ----------
-        fits_files: list
-            List of fits files.
+            hdu_list = self.getimg_PS1(ra,dec,size=3,filters=filters)
 
-        Returns
-        -------
-        matched_fits_files: list
-            List of fits files with matched WCS.
-        """
-        matched_fits_files = copy.deepcopy(fits_files)
-        # some hdu have data + error
-        hdu0 = matched_fits_files[0][0]
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", AstropyWarning)
-            wcs0 = wcs.WCS(hdu0.header)
+        elif survey == 'SDSS':
+            hdu_list = self.getimg_SDSS(ra,dec,size=3,filters=filters,version = None)
+        elif survey == 'GALEX':
+            hdu_list = self.getimg_GALEX(ra,dec,size=3,filters=filters,version = None)
+        elif survey == 'WISE':
+            hdu_list = self.getimg_WISE(ra,dec,size=3,filters=filters)
+        elif survey == 'unWISE':
+            hdu_list = self.getimg_unWISE(ra,dec,size=3,filters=filters,version = 'allwise')
+        elif survey == '2MASS':
+            hdu_list = self.getimg_2MASS(ra,dec,size=3,filters=filters)
+        elif survey == 'LegacySurvey':
+            hdu_list = self.getimg_LegacySurvey(ra,dec,size=3,filters=filters)
+        elif survey == 'VISTA':
+            hdu_list = self.getimg_VISTA(ra,dec,size=3,filters=filters,version = None)
+        elif survey == 'SPLUS':
+            hdu_list = self.getimg_SPLUS(ra,dec,size=3,filters=filters)
+        elif survey == 'UKIDSS':
+            hdu_list = self.getimg_UKIDSS(ra,dec,size=3,filters=filters)
 
-            for hdu in matched_fits_files[1:]:
-                data, footprint = reproject_interp(hdu[0], hdu0.header)
-                hdu[0].data = data
-                hdu[0].header.update(wcs0.to_header())
 
-        return matched_fits_files
+
+        if hdu_list:
+            for hdu, filt in zip(hdu_list, filters):
+                if hdu is None:
+                    continue  # skip missing filter/image
+
+                else:
+                    outfile = os.path.join(obj_dir, f"{survey}_{filt}.fits")
+
+                if overwrite is True or os.path.isfile(outfile) is False:
+                    hdu.writeto(outfile, overwrite=overwrite)
+                else:
+                    continue
+  
+
+
+
+
 
     def check_existing_images(name, filters, survey):
         """Checks if images exist for the given filters+survey

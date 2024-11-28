@@ -1,4 +1,4 @@
-,survey,filters,m_zp,pizxel_scale,resolution
+,survey,filters,m_zp,pixel_scale,resolution
 0,PS1,"['g', 'r', 'i', 'z', 'y']",25,0.25,0.0
 1,SDSS,"['u', 'g', 'r', 'i', 'z']",22.5,0.396,0.0
 2,GALEX,"['FUV', 'NUV']","[18.82, 20.08]",1.5,1.0
