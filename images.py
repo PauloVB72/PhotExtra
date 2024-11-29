@@ -19,7 +19,7 @@ from astropy.table import Table
 from astropy import wcs, units as u
 from astropy.coordinates import SkyCoord
 from astropy.nddata import Cutout2D
-
+import matplotlib.pyplot as plt
 import pyvo  # 2MASS
 from pyvo.dal import sia  # DES, SkyMapper, S-Plus
 from astroquery.sdss import SDSS
@@ -35,9 +35,10 @@ from reproject import reproject_interp
 from params import parameters
 from utils import folder_exists,directory
 from utils import survey_pixel_scale
-import Photsfh
 
-repository_path = Path(Photsfh.__path__[0])
+#import Photsfh
+
+#repository_path = Path(Photsfh.__path__[0])
 
 
 import warnings
@@ -45,10 +46,8 @@ from astropy.utils.exceptions import AstropyWarning
 
 # 
 
-class get_images(get_surveys):
+class get_images():
     def __init__(self, position, size, surveys_init,versions = None):
-
-        super.__init__()
 
 
         try:
@@ -74,8 +73,11 @@ class get_surveys():
         
         
         """
-        
+       
         survey = "PS1"
+
+        if filters is None:
+            filters = 'grizy'
 
         pixel_scale = survey_pixel_scale(survey)      
 
@@ -108,7 +110,7 @@ class get_surveys():
             url_list.append(base_url + filename)
 
         hdu_list = []
-        for url, filt in zip(fits_url, filters):
+        for url, filt in zip(url_list, filters):
             hdu = fits.open(url)
             hdu_list.append(hdu)
         return hdu_list
@@ -637,7 +639,7 @@ class get_surveys():
                 fits_url = filt_df.access_url.values[0]  # first image
                 url_list.append(fits_url)
 
-        global repository_path
+        #global repository_path
 
         if url_list is None:
             return None
@@ -651,8 +653,8 @@ class get_surveys():
 
                 # add zeropoint
                 # file from https://splus.cloud/documentation/dr2_3
-                zps_file = repository_path.joinpath('filters', 'SPLUS', 'iDR3_zps.cat')
-                zps_df = pd.read_csv(zps_file, sep='\\s+')
+                #zps_file = repository_path.joinpath('filters', 'SPLUS', 'iDR3_zps.cat')
+                zps_df = pd.read_csv('iDR3_zps.cat', sep='\\s+')
 
                 field = hdu[0].header['OBJECT'].replace('_', '-')
                 field_df = zps_df[zps_df['#field']==field]
@@ -718,19 +720,22 @@ class get_surveys():
         
         return hdu_list
     
-    def dowload_img(self,name, ra ,dec, survey, size =3,filters = None,version = None, path = None,overwrite=True,):
+    def dowload_img(self,name, ra ,dec,size =3, survey='SDSS',filters = None,version = None, path = None, overwrite=True):
+        
+        workdir = os.getenv("workdir", "images")
         if path == None:
-            path = name
+            path = workdir
+        else:
+            pass
         if folder_exists(path) == True:
             obj_dir = os.path.join(path, name) 
         else:
             directory(path)
-            obj_dir = os.path.join(workdir, name) 
+            obj_dir = os.path.join(path, name) 
+
 
         if survey == 'PS1':
-
             hdu_list = self.getimg_PS1(ra,dec,size=3,filters=filters)
-
         elif survey == 'SDSS':
             hdu_list = self.getimg_SDSS(ra,dec,size=3,filters=filters,version = None)
         elif survey == 'GALEX':
@@ -750,8 +755,7 @@ class get_surveys():
         elif survey == 'UKIDSS':
             hdu_list = self.getimg_UKIDSS(ra,dec,size=3,filters=filters)
 
-
-
+        
         if hdu_list:
             for hdu, filt in zip(hdu_list, filters):
                 if hdu is None:
@@ -767,152 +771,11 @@ class get_surveys():
   
 
 
+ra = 351.2577 
+dec = -0.00041
+size= 3
+name ='SIT45'
 
-
-
-    def check_existing_images(name, filters, survey):
-        """Checks if images exist for the given filters+survey
-        combination, for the given object.
-
-        Parameters
-        ----------
-        name : str
-            Name of the object.
-        filters : str or list
-            Filters to use.
-        survey : str
-            Survey name.
-
-        Returns
-        -------
-        filters_without_image: list
-            Filters without images.
-        """
-        check_survey_validity(survey)
-
-        check_work_dir(workdir)
-        obj_dir = os.path.join(workdir, name) 
-        
-        filters_without_image = []
-        for filt in filters:
-            filt_image = os.path.join(obj_dir, f'{survey}_{filt}.fits')
-            if os.path.isfile(filt_image) is False:
-                filters_without_image.append(filt)
-
-        return filters_without_image
-
-    # Master Function
-    # ----------------------------------------
-    def download_images(
-        name,
-        ra,
-        dec,
-        size=3,
-        filters=None,
-        overwrite=True,
-        survey="PS1",
-        version=None,
-    ):
-        """Download images for a given object in the given filters of a
-        given survey.
-
-        The surveys that use the ``version`` parameter are: GALEX (``AIS``, ``MIS``,
-        ``DIS``, ``NGS`` and ``GII``),  unWISE (``allwise`` and ``neo{i}`` for {i}=1-7),
-        VISTA (``VHS``, ``VIDEO`` and ``VIKING``) and SDSS (``dr{i}`` for {i}=12-17).
-
-        Parameters
-        ----------
-        name: str
-            Name used for tracking the object in your local
-            directory.
-        ra: float
-            Right ascension in degrees.
-        dec: float
-            Declination in degrees.
-        size: float or ~astropy.units.Quantity, default ``3``
-            Image size. If a float is given, the units are assumed to be arcmin.
-        filters: str, default ``None``
-            Filters for the images.
-        overwrite: bool, default ``True``
-            If ``True``, the images are overwritten if they already
-            exist.
-        survey: str, default ``PS1``
-            Survey used to download the images.
-        version: str, default ``None``
-            Version used by some surveys including multiple surveys. E.g. ``VHS`` for VISTA.
-
-        Examples
-        --------
-        >>> from hostphot.cutouts import download_images
-        >>> name = 'SN2004eo'
-        >>> host_ra, host_dec = 308.2092, 9.92755  # coords of host galaxy of SN2004eo
-        >>> survey = 'PS1'
-        >>> download_images(name, host_ra, host_dec, survey=survey)
-        """
-        check_survey_validity(survey)
-
-        check_work_dir(workdir)
-        obj_dir = os.path.join(workdir, name)
-        if not os.path.isdir(obj_dir):
-            os.mkdir(obj_dir)
-
-        if filters is None:
-            filters = get_survey_filters(survey)
-
-        if overwrite is False:
-            filters = check_existing_images(name, filters, survey)
-        
-        # download fits files
-        if survey == "PS1":
-            hdu_list = get_PS1_images(ra, dec, size, filters)
-        elif survey == "DES":
-            hdu_list = get_DES_images(ra, dec, size, filters)
-        elif survey == "SDSS":
-            hdu_list = get_SDSS_images(ra, dec, size, filters, version)
-        elif survey == "GALEX":
-            hdu_list = get_GALEX_images(ra, dec, size, filters, version)
-        elif survey == "WISE":
-            hdu_list = get_WISE_images(ra, dec, size, filters)
-        elif survey == "unWISE":
-            hdu_list = get_unWISE_images(ra, dec, size, filters, version)
-        elif survey == "2MASS":
-            hdu_list = get_2MASS_images(ra, dec, size, filters)
-        elif survey == "LegacySurvey":
-            hdu_list = get_LegacySurvey_images(ra, dec, size, filters, version)
-        elif survey == "Spitzer":
-            hdu_list = get_Spitzer_images(ra, dec, size, filters)
-        elif survey == "VISTA":
-            hdu_list = get_VISTA_images(ra, dec, size, filters, version)
-        elif survey == "HST":
-            hdu_list = get_HST_images(ra, dec, size, filters)
-        elif survey == "SkyMapper":
-            hdu_list = get_SkyMapper_images(ra, dec, size, filters)
-        elif survey == "SPLUS":
-            hdu_list = get_SPLUS_images(ra, dec, size, filters)
-        elif survey == "UKIDSS":
-            hdu_list = get_UKIDSS_images(ra, dec, size, filters)
-        else:
-            raise ValueError(
-                "The given survey is not properly added to HostPhot..."
-            )
-        
-        if hdu_list:
-            for hdu, filt in zip(hdu_list, filters):
-                if hdu is None:
-                    continue  # skip missing filter/image
-
-                if survey == "HST":
-                    inst = version.replace("/", "-")
-                    outfile = os.path.join(
-                        obj_dir, f"{survey}_{inst}-{filters}.fits"
-                    )
-                else:
-                    outfile = os.path.join(obj_dir, f"{survey}_{filt}.fits")
-
-                if overwrite is True or os.path.isfile(outfile) is False:
-                    hdu.writeto(outfile, overwrite=overwrite)
-                else:
-                    continue
-
-        # remove directory if it ends up empty
-        clean_dir(obj_dir)
+if __name__ == "__main__":
+    get_surveys().dowload_img(name,ra,dec,size=size,survey='PS1')
+    

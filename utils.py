@@ -1,8 +1,11 @@
 import numpy as np
 import pandas as pd
 from astropy import units as u
+import os
 
-config = pd.read_csv('prm_config.csv')
+
+
+config = pd.read_csv('/home/polo/Escritorio/Works/Doctorado/Code/SFHmergers/Photsfh/prm_config.csv')
 
 
 def survey_pixel_scale(survey:str):
@@ -29,3 +32,6 @@ def directory(path:str)-> None:
             print ("Creation of the directory %s failed" % mdir)
         else:
             print ("Successfully created the directory %s " % mdir)
+
+def filter_check(survey,filter):
+    
