@@ -13,17 +13,17 @@ config = pd.read_csv('/home/polo/Escritorio/Works/Doctorado/Code/SFHmergers/Phot
 def check_data():
     pass
 
-#data = ['SDSS_u','SDSS_g','SDSS_r','SDSS_i','SDSS_z','2MASS_K','2MASS_J','2MASS_H']
+#data = ['SDSS_u','SDSS_g','SDSS_r','SDSS_i','SDSS_z','2MASS_K','2MASS_J','2MASS_H','GALEX_FUV','GALEX_NUV','WISE_W1','WISE_W2','WISE_W3']
 
 #position = (130.3,20.3)
 
-#size = 10*u.arcmin
+#size = 10
 
 class parameters:
     
     def __init__(self,data,position,size):
         # data separation
-
+        
         if isinstance(data[0],str):
             surveys = {}
             for items in data:
@@ -37,21 +37,22 @@ class parameters:
             list_bands = list(surveys.values())
 
         else:
-            warnings()
+            
+            warnings
         # position 
         if isinstance(position[0],(int,float)):
             pass
         else:
-            warnings()
+            
+            warnings
         # size 
 
-        if isinstance(size,u.arcmin):
-
-            if size >= 3.:
-
-                warnings()
+        if size >= 5.:
+                
+                warnings
         else:
-            warnings()
+            
+            warnings
     def survey_values(self):
 
         return self.surveys
@@ -65,14 +66,13 @@ class parameters:
                     if flt in ''.join(config.loc[config['survey'] == srv, 'filters'].astype(str)):
                         pass
                     else:
-                        warnings()
+                        warnings
             else:
-                warnings()
-        return self.survey_values()
+                warnings
     
 
 
     
     
 #if __name__ == "__main__":
- #   parameters(data,position,size).survey_values()
+   # print(parameters(data,position,size).survey_values())

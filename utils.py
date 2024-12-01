@@ -120,11 +120,10 @@ def check_filters(survey, filters):
                 user_filters = filters
 
             if all(f in valid_filters for f in user_filters):
-                return ''.join(user_filters)
+                return filters
             else:
                 menssage = f"Error: Filters {user_filters} are not valid in the survey '{survey}'. Valid filters: {valid_filters}"
                 assert False ,menssage           
 
     
-
-print(check_filters('PS1',None))
+print(check_filters('WISE',['W1','W2','W3']))

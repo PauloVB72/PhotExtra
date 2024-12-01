@@ -47,18 +47,30 @@ from astropy.utils.exceptions import AstropyWarning
 # 
 
 class get_images():
-    def __init__(self, position, size, surveys_init,versions = None):
+    def __init__(self, name, position, size, surveys_init,versions = None, path = None):
 
 
         try:
+            parameters(surveys_init,position,size).check_validity()
+            self.name = name
             
-            self.surveys = parameters(surveys_init,position,size).check_validity()
+            self.surveys = parameters(surveys_init,position,size).survey_values()
+        
             self.ra, self.dec = position
             self.size = size
+            self.versions = versions
 
         except:
-            warnings()
-        
+            warnings
+
+
+    def dowload(self):
+        gs = get_surveys()
+        for srv in list(self.surveys.keys()):
+            
+            gs.dowload_img(self.name,self.ra,self.dec,self.size, survey=srv,filters=self.surveys[srv],version=self.versions,path=None)
+
+        return f"Dowload completed in folder."
 class get_surveys():
 
     def __init__(versions = None):
@@ -728,7 +740,9 @@ class get_surveys():
             path = workdir
         else:
             pass
+
         if folder_exists(path) is True:
+
             obj_dir = os.path.join(path, name) 
             if folder_exists(obj_dir) is True:
                 pass
@@ -739,7 +753,7 @@ class get_surveys():
             obj_dir = os.path.join(path, name) 
             directory(obj_dir)
 
-        print(obj_dir)
+
 
 
         if survey == 'PS1':
@@ -749,6 +763,7 @@ class get_surveys():
         elif survey == 'GALEX':
             hdu_list = self.getimg_GALEX(ra,dec,size=3,filters=filters,version = None)
         elif survey == 'WISE':
+            print(filters)
             hdu_list = self.getimg_WISE(ra,dec,size=3,filters=filters)
         elif survey == 'unWISE':
             hdu_list = self.getimg_unWISE(ra,dec,size=3,filters=filters,version = 'allwise')
@@ -763,8 +778,6 @@ class get_surveys():
         elif survey == 'UKIDSS':
             hdu_list = self.getimg_UKIDSS(ra,dec,size=3,filters=filters)
 
-        print(hdu_list)
-        print(obj_dir)
         if hdu_list:
             for hdu, filt in zip(hdu_list, filters):
                 if hdu is None:
@@ -779,12 +792,12 @@ class get_surveys():
                     continue
   
 
-
+data = ['SDSS_u','SDSS_g','SDSS_r','SDSS_i','SDSS_z','2MASS_Ks','2MASS_J','2MASS_H','WISE_W1','WISE_W2','WISE_W3','GALEX_FUV','GALEX_NUV']
 ra = 351.2577 
 dec = -0.00041
 size= 3
-name ='SIT45'
+name ='SIT'
 
 if __name__ == "__main__":
-    get_surveys().dowload_img(name,ra,dec,size=size,survey='GALEX')
+    get_images(name,(ra,dec),size,data).dowload()
     
