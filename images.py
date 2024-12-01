@@ -35,7 +35,7 @@ from reproject import reproject_interp
 from params import parameters
 from utils import folder_exists,directory
 from utils import survey_pixel_scale
-
+from utils import check_filters
 #import Photsfh
 
 #repository_path = Path(Photsfh.__path__[0])
@@ -722,16 +722,24 @@ class get_surveys():
     
     def dowload_img(self,name, ra ,dec,size =3, survey='SDSS',filters = None,version = None, path = None, overwrite=True):
         
+        filters = check_filters(survey,filters)
         workdir = os.getenv("workdir", "images")
         if path == None:
             path = workdir
         else:
             pass
-        if folder_exists(path) == True:
+        if folder_exists(path) is True:
             obj_dir = os.path.join(path, name) 
+            if folder_exists(obj_dir) is True:
+                pass
+            else:
+                directory(obj_dir)
         else:
             directory(path)
             obj_dir = os.path.join(path, name) 
+            directory(obj_dir)
+
+        print(obj_dir)
 
 
         if survey == 'PS1':
@@ -755,7 +763,8 @@ class get_surveys():
         elif survey == 'UKIDSS':
             hdu_list = self.getimg_UKIDSS(ra,dec,size=3,filters=filters)
 
-        
+        print(hdu_list)
+        print(obj_dir)
         if hdu_list:
             for hdu, filt in zip(hdu_list, filters):
                 if hdu is None:
@@ -777,5 +786,5 @@ size= 3
 name ='SIT45'
 
 if __name__ == "__main__":
-    get_surveys().dowload_img(name,ra,dec,size=size,survey='PS1')
+    get_surveys().dowload_img(name,ra,dec,size=size,survey='GALEX')
     
