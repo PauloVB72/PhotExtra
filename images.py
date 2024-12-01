@@ -791,13 +791,3 @@ class get_surveys():
                 else:
                     continue
   
-
-data = ['SDSS_u','SDSS_g','SDSS_r','SDSS_i','SDSS_z','2MASS_Ks','2MASS_J','2MASS_H','WISE_W1','WISE_W2','WISE_W3','GALEX_FUV','GALEX_NUV']
-ra = 351.2577 
-dec = -0.00041
-size= 3
-name ='SIT'
-
-if __name__ == "__main__":
-    get_images(name,(ra,dec),size,data).dowload()
-    
