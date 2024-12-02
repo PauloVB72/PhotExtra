@@ -32,10 +32,10 @@ from astroquery.esa.hubble import ESAHubble  # HST
 esahubble = ESAHubble()
 
 from reproject import reproject_interp
-from params import parameters
-from utils import folder_exists,directory
-from utils import survey_pixel_scale
-from utils import check_filters
+from Photsfh.params import parameters
+from Photsfh.utils import folder_exists,directory
+from Photsfh.utils import survey_pixel_scale
+from Photsfh.utils import check_filters
 #import Photsfh
 
 #repository_path = Path(Photsfh.__path__[0])
@@ -791,3 +791,4 @@ class get_surveys():
                 else:
                     continue
   
+# funcion que diga que no hay imagenes para ese survey de datos en caso de none. 

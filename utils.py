@@ -3,7 +3,7 @@ import pandas as pd
 from astropy import units as u
 import os
 import ast
-
+import requests
 
 
 path = '/home/polo/Escritorio/Works/Doctorado/Code/SFHmergers/Photsfh/prm_config.csv'
@@ -123,7 +123,26 @@ def check_filters(survey, filters):
                 return filters
             else:
                 menssage = f"Error: Filters {user_filters} are not valid in the survey '{survey}'. Valid filters: {valid_filters}"
-                assert False ,menssage           
+                assert False ,menssage       
 
+
+
+
+def dowload_kernel(name:str,path:str):
+
+    hi_res = "https://www.astro.princeton.edu/~draine/Kernels/Kernels_2018/Kernel_FITS_Files/Hi_Resolution/"
+    file_url = hi_res + name    #"Kernel_HiRes_BiGauss_00.5_to_GALEX_FUV.fits.gz"
+
+    output_folder = "KERNELS"
+    os.makedirs(path, exist_ok=True)
+
+    file_name = os.path.join(output_folder, file_url.split("/")[-1])
+
+    #print(f"Descargando {file_name}...")
+    response = requests.get(file_url, stream=True)
+    response.raise_for_status()
+
+    with open(file_name, 'wb') as f:
+        for chunk in response.iter_content(chunk_size=8192):
+            f.write(chunk)
     
-print(check_filters('WISE',['W1','W2','W3']))

@@ -70,9 +70,3 @@ class parameters:
             else:
                 warnings
     
-
-
-    
-    
-#if __name__ == "__main__":
-   # print(parameters(data,position,size).survey_values())
