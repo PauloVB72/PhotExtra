@@ -4,7 +4,7 @@ from astropy import units as u
 import os
 import ast
 import requests
-
+import sep 
 
 path = '/home/polo/Escritorio/Works/Doctorado/Code/SFHmergers/Photsfh/prm_config.csv'
 
@@ -145,4 +145,19 @@ def dowload_kernel(name:str,path:str):
     with open(file_name, 'wb') as f:
         for chunk in response.iter_content(chunk_size=8192):
             f.write(chunk)
+
+
+
+def bkg_sub(data:np.array,survey:str):
     
+    bkg_surveys = ["2MASS", "WISE", "VISTA", "SkyMapper", "UKIDSS"]
+
+    data = data.astype(np.float64)
+    bkg = sep.Background(data)
+
+    bkg_rms = bkg.globalrms
+
+    if survey in bkg_surveys:
+        return np.copy(data - bkg)
+    else:
+        return  data

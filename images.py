@@ -9,7 +9,7 @@ import tarfile
 import requests  # for several surveys
 import numpy as np
 import pandas as pd
-
+from scipy.ndimage import rotate
 # for VISTA
 import re
 import urllib
@@ -32,10 +32,11 @@ from astroquery.esa.hubble import ESAHubble  # HST
 esahubble = ESAHubble()
 
 from reproject import reproject_interp
-from Photsfh.params import parameters
-from Photsfh.utils import folder_exists,directory
-from Photsfh.utils import survey_pixel_scale
-from Photsfh.utils import check_filters
+from params import parameters
+from utils import folder_exists,directory
+from utils import survey_pixel_scale
+from utils import check_filters
+from utils import bkg_sub
 #import Photsfh
 
 #repository_path = Path(Photsfh.__path__[0])
@@ -47,7 +48,7 @@ from astropy.utils.exceptions import AstropyWarning
 # 
 
 class get_images():
-    def __init__(self, name, position, size, surveys_init,versions = None, path = None):
+    def __init__(self, name, position, size, surveys_init,versions = None, path = None, bkg_sub = True):
 
 
         try:
@@ -59,16 +60,16 @@ class get_images():
             self.ra, self.dec = position
             self.size = size
             self.versions = versions
-
+            self.path = path
         except:
-            warnings
+            warnings.warn('ERROR')
 
 
     def dowload(self):
         gs = get_surveys()
         for srv in list(self.surveys.keys()):
             
-            gs.dowload_img(self.name,self.ra,self.dec,self.size, survey=srv,filters=self.surveys[srv],version=self.versions,path=None)
+            gs.dowload_img(self.name,self.ra,self.dec,self.size, survey=srv,filters=self.surveys[srv],version=self.versions,path=self.path)
 
         return f"Dowload completed in folder."
 class get_surveys():
@@ -190,11 +191,15 @@ class get_surveys():
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", AstropyWarning)
                 img_wcs = wcs.WCS(hdu[0].header)
-
+                print(img_wcs)
+                
             trimmed_data = Cutout2D(hdu[0].data, coords, size_pixels, img_wcs)
-            hdu[0].data = trimmed_data.data
-            hdu[0].header.update(trimmed_data.wcs.to_header())
 
+            #hdu[0].data = trimmed_data.data
+            hdu[0].data = rotate(trimmed_data.data,-90)
+            hdu[0].header.update(trimmed_data.wcs.to_header())
+            plt.imshow(hdu[0].data, cmap='gray', origin='lower',vmin=np.nanmean(hdu[0].data)-np.nanstd(hdu[0].data),vmax=np.nanmean(hdu[0].data)+np.nanstd(hdu[0].data))
+            plt.show()
         return hdu_list
 
     def getimg_GALEX(self, ra ,dec, size =3, filters = None, version=None):
@@ -763,7 +768,6 @@ class get_surveys():
         elif survey == 'GALEX':
             hdu_list = self.getimg_GALEX(ra,dec,size=3,filters=filters,version = None)
         elif survey == 'WISE':
-            print(filters)
             hdu_list = self.getimg_WISE(ra,dec,size=3,filters=filters)
         elif survey == 'unWISE':
             hdu_list = self.getimg_unWISE(ra,dec,size=3,filters=filters,version = 'allwise')
@@ -792,3 +796,10 @@ class get_surveys():
                     continue
   
 # funcion que diga que no hay imagenes para ese survey de datos en caso de none. 
+
+#ra = 351.2577 
+#dec = -0.00041
+#size= 3
+#name ='SIT45'
+#gss = get_surveys()
+#print(gss.getimg_SDSS(ra = ra,dec = dec,size=3,filters='g'))
