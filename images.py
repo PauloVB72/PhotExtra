@@ -356,6 +356,12 @@ class get_surveys():
                 hdu = fits.open(url)
                 hdu_list.append(hdu)
 
+        for dt in hdu_list:
+            try:
+                dt[0].data
+                dt[0].data = bkg_sub(dt[0].data,survey=survey)
+            except:
+                pass       
         return hdu_list
 
    
@@ -498,6 +504,13 @@ class get_surveys():
                     # pick largest image, which usually is the best
                     i = np.argmax(sizes)
                     hdu_list.append(tmp_hdu_list[i])
+        
+        for dt in hdu_list:
+            try:
+                dt[0].data
+                dt[0].data = bkg_sub(dt[0].data,survey=survey)
+            except:
+                pass
 
         return hdu_list
 
@@ -620,6 +633,12 @@ class get_surveys():
             else:
                 hdu_list.append(None)
 
+        for dt in hdu_list:
+            try:
+                dt[0].data
+                dt[0].data = bkg_sub(dt[0].data,survey=survey)
+            except:
+                pass
         return hdu_list
 
 
@@ -734,7 +753,14 @@ class get_surveys():
                     break                
 
         hdu_list = list(hdu_dict.values())
-        
+
+        for dt in hdu_list:
+            try:
+                dt[0].data
+                dt[0].data = bkg_sub(dt[0].data,survey=survey)
+            except:
+                pass
+
         return hdu_list
     
     def dowload_img(self,name, ra ,dec,size =3, survey='SDSS',filters = None,version = None, path = None, overwrite=True):

@@ -150,7 +150,7 @@ def dowload_kernel(name:str,path:str):
 
 def bkg_sub(data:np.array,survey:str):
     
-    bkg_surveys = ["2MASS", "WISE", "VISTA", "SkyMapper", "UKIDSS"]
+    bkg_surveys = ["2MASS", "WISE", "VISTA", "UKIDSS"]
 
     data = data.astype(np.float64)
     bkg = sep.Background(data)
