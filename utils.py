@@ -4,7 +4,9 @@ from astropy import units as u
 import os
 import ast
 import requests
-import sep 
+from astropy.stats import SigmaClip
+from photutils.background import Background2D, MedianBackground
+
 
 path = '/home/polo/Escritorio/Works/Doctorado/Code/SFHmergers/Photsfh/prm_config.csv'
 
@@ -149,13 +151,14 @@ def dowload_kernel(name:str,path:str):
 
 
 def bkg_sub(data:np.array,survey:str):
-    
+    # A first approximation. at future change the bkg_stimator to election 
     bkg_surveys = ["2MASS", "WISE", "VISTA", "UKIDSS"]
-
+    
     data = data.astype(np.float64)
-    bkg = sep.Background(data)
-
-    bkg_rms = bkg.globalrms
+    sigma_clip = SigmaClip(sigma=3.0)
+    bkg_estimator = MedianBackground()
+    bkg = Background2D(data, (50, 50), filter_size=(3, 3),
+                   sigma_clip=sigma_clip, bkg_estimator=bkg_estimator)
 
     if survey in bkg_surveys:
         return np.copy(data - bkg)
