@@ -37,6 +37,7 @@ from utils import folder_exists,directory
 from utils import survey_pixel_scale
 from utils import check_filters
 from utils import bkg_sub
+from utils import header_changes
 #import Photsfh
 
 #repository_path = Path(Photsfh.__path__[0])
@@ -815,7 +816,8 @@ class get_surveys():
 
                 else:
                     outfile = os.path.join(obj_dir, f"{survey}_{filt}.fits")
-
+                size_img = hdu[0].data.shape
+                hdu = header_changes(hdu,ra,dec,size_img)
                 if overwrite is True or os.path.isfile(outfile) is False:
                     hdu.writeto(outfile, overwrite=overwrite)
                 else:
@@ -823,9 +825,11 @@ class get_surveys():
   
 # funcion que diga que no hay imagenes para ese survey de datos en caso de none. 
 
-#ra = 351.2577 
-#dec = -0.00041
-#size= 3
-#name ='SIT45'
-#gss = get_surveys()
-#print(gss.getimg_SDSS(ra = ra,dec = dec,size=3,filters='g'))
+ra = 351.2577 
+dec = -0.00041
+size= 3
+name ='SIT45'
+surveys_ints = ['SDSS_g','GALEX_NUV','WISE_W1','2MASS_Ks']
+gs = get_images(name,(ra,dec),size,surveys_ints)
+
+gs.dowload()

@@ -164,3 +164,16 @@ def bkg_sub(data:np.array,survey:str):
         return np.copy(data - bkg)
     else:
         return  data
+
+
+def header_changes(hdu,ra:float,dec:float,size_img:list):
+
+    header = hdu[0].header
+    header['NAXIS1'] = size_img[0]
+    header['NAXIS2'] = size_img[1]
+    header['CRPIX1'] = size_img[0] / 2
+    header['CRPIX2'] = size_img[1] / 2
+    header['CRVAL1'] = ra
+    header['CRVAL2'] = dec
+
+    return hdu
