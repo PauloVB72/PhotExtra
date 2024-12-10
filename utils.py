@@ -8,6 +8,11 @@ from astropy.stats import SigmaClip
 from photutils.background import Background2D, MedianBackground
 
 
+from astropy.io import fits
+from astropy.wcs import WCS
+
+
+
 path = '/home/polo/Escritorio/Works/Doctorado/Code/SFHmergers/Photsfh/prm_config.csv'
 
 def load_data(csv_file):

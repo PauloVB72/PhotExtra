@@ -13,7 +13,7 @@ from scipy.ndimage import rotate
 # for VISTA
 import re
 import urllib
-
+import montage_wrapper as montage
 from astropy.io import fits
 from astropy.table import Table
 from astropy import wcs, units as u
@@ -38,6 +38,7 @@ from utils import survey_pixel_scale
 from utils import check_filters
 from utils import bkg_sub
 from utils import header_changes
+from utils import montage_repro
 #import Photsfh
 
 #repository_path = Path(Photsfh.__path__[0])
@@ -188,20 +189,25 @@ class get_surveys():
         hdu_list = SDSS.get_images(matches=ids, band=filters, data_release=dr)
 
         # SDSS images are large so need to be trimmed
-        for hdu in hdu_list:
+        hdul_list = list()
+    
+        for hdul in hdu_list:
+            
+            hdulnew = montage.reproject_hdu(hdul[0], north_aligned=True)
+            hdul_list.append(hdulnew)
+        images_list = list()
+        for hdu in hdul_list:
+            
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", AstropyWarning)
-                img_wcs = wcs.WCS(hdu[0].header)
-                print(img_wcs)
-                
-            trimmed_data = Cutout2D(hdu[0].data, coords, size_pixels, img_wcs)
+                img_wcs = wcs.WCS(hdu.header)
+            
 
-            #hdu[0].data = trimmed_data.data
-            hdu[0].data = rotate(trimmed_data.data,-90)
-            hdu[0].header.update(trimmed_data.wcs.to_header())
-            plt.imshow(hdu[0].data, cmap='gray', origin='lower',vmin=np.nanmean(hdu[0].data)-np.nanstd(hdu[0].data),vmax=np.nanmean(hdu[0].data)+np.nanstd(hdu[0].data))
-            plt.show()
-        return hdu_list
+            trimmed_data = Cutout2D(hdu.data, coords, size_pixels, img_wcs)
+            hdu.data = trimmed_data.data
+            hdu.header.update(trimmed_data.wcs.to_header())
+
+        return hdul_list
 
     def getimg_GALEX(self, ra ,dec, size =3, filters = None, version=None):
 
@@ -827,9 +833,11 @@ class get_surveys():
 
 ra = 351.2577 
 dec = -0.00041
+ra_gal2 = 20.0108974646	
+dec_gal2 = 14.3617675139
 size= 3
-name ='SIT45'
-surveys_ints = ['SDSS_g','GALEX_NUV','WISE_W1','2MASS_Ks']
-gs = get_images(name,(ra,dec),size,surveys_ints)
+name ='merger1'
+surveys_ints = ['SDSS_z']
+gs = get_images(name,(ra_gal2,dec_gal2),size,surveys_ints)
 
 gs.dowload()
