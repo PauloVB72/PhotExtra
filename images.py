@@ -38,8 +38,7 @@ from utils import survey_pixel_scale
 from utils import check_filters
 from utils import bkg_sub
 from utils import header_changes
-from utils import montage_repro
-#import Photsfh
+
 
 #repository_path = Path(Photsfh.__path__[0])
 
@@ -822,8 +821,11 @@ class get_surveys():
 
                 else:
                     outfile = os.path.join(obj_dir, f"{survey}_{filt}.fits")
-                size_img = hdu[0].data.shape
-                hdu = header_changes(hdu,ra,dec,size_img)
+                if survey=='SDSS':
+                    size_img = hdu.data.shape
+                else:
+                    size_img = hdu[0].data.shape
+                hdu = header_changes(hdu,ra,dec,size_img,survey)
                 if overwrite is True or os.path.isfile(outfile) is False:
                     hdu.writeto(outfile, overwrite=overwrite)
                 else:
@@ -835,9 +837,12 @@ ra = 351.2577
 dec = -0.00041
 ra_gal2 = 20.0108974646	
 dec_gal2 = 14.3617675139
+
+ra_gal3=123.30674	
+dec_gal3 = 24.60798
 size= 3
-name ='merger1'
-surveys_ints = ['SDSS_z']
-gs = get_images(name,(ra_gal2,dec_gal2),size,surveys_ints)
+name ='merger2'
+surveys_ints = ['SDSS_r']
+gs = get_images(name,(ra_gal3,dec_gal3),size,surveys_ints)
 
 gs.dowload()

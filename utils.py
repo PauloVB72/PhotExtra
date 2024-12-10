@@ -7,7 +7,7 @@ import requests
 from astropy.stats import SigmaClip
 from photutils.background import Background2D, MedianBackground
 
-
+import json
 from astropy.io import fits
 from astropy.wcs import WCS
 
@@ -22,6 +22,20 @@ def load_data(csv_file):
     return df
 
 config = load_data(path)
+
+
+
+
+def survey_resolution(survey:str):
+
+    # mejorar para valores de distintas bandas
+
+    global config
+
+    pxscale = config.loc[config['survey'] == survey, 'resolution']
+    
+    return pxscale
+
 
 
 def survey_pixel_scale(survey:str):
@@ -138,6 +152,7 @@ def check_filters(survey, filters):
 def dowload_kernel(name:str,path:str):
 
     hi_res = "https://www.astro.princeton.edu/~draine/Kernels/Kernels_2018/Kernel_FITS_Files/Hi_Resolution/"
+
     file_url = hi_res + name    #"Kernel_HiRes_BiGauss_00.5_to_GALEX_FUV.fits.gz"
 
     output_folder = "KERNELS"
@@ -148,11 +163,11 @@ def dowload_kernel(name:str,path:str):
     #print(f"Descargando {file_name}...")
     response = requests.get(file_url, stream=True)
     response.raise_for_status()
-
+    print(response.iter_content(chunk_size=8192))
     with open(file_name, 'wb') as f:
         for chunk in response.iter_content(chunk_size=8192):
             f.write(chunk)
-
+    return file_name
 
 
 def bkg_sub(data:np.array,survey:str):
@@ -171,9 +186,12 @@ def bkg_sub(data:np.array,survey:str):
         return  data
 
 
-def header_changes(hdu,ra:float,dec:float,size_img:list):
+def header_changes(hdu,ra:float,dec:float,size_img:list,survey=None):
+    if survey == 'SDSS':
 
-    header = hdu[0].header
+        header = hdu.header
+    else:
+        header = hdu[0].header
     header['NAXIS1'] = size_img[0]
     header['NAXIS2'] = size_img[1]
     header['CRPIX1'] = size_img[0] / 2
@@ -182,3 +200,18 @@ def header_changes(hdu,ra:float,dec:float,size_img:list):
     header['CRVAL2'] = dec
 
     return hdu
+
+
+
+def get_data(inp_survey: str, ker_survey:str):
+    with open("/home/polo/Escritorio/Works/Doctorado/Code/SFHmergers/Photsfh/kernel_survey.json", "r") as f:
+        data = json.load(f)
+
+    # Buscar el valor específico para SDSS → WISE
+    for entry in data:
+        if entry["From"] == inp_survey and entry["To"] == ker_survey:
+            print(f"Valor SDSS→WISE: {entry['Value']}")
+            return entry['Value']
+
+
+dowload_kernel('Kernel_HiRes_BiGauss_01.0_to_WISE_SINGLE_FRAME_3.4.fits','/home/polo/Escritorio/Works/Doctorado/Code/SFHmergers/images/kernels')
