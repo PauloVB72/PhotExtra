@@ -31,10 +31,10 @@ def survey_resolution(survey:str):
     # mejorar para valores de distintas bandas
 
     global config
-
-    pxscale = config.loc[config['survey'] == survey, 'resolution']
     
-    return pxscale
+    resolution = config.loc[config['survey'] == survey, 'resolution']
+    
+    return resolution
 
 
 
@@ -49,6 +49,7 @@ def survey_pixel_scale(survey:str):
 
 
 def folder_exists(folder_path):
+
     return os.path.isdir(folder_path)
 
 
@@ -155,11 +156,9 @@ def dowload_kernel(name:str,path:str):
 
     file_url = hi_res + name    #"Kernel_HiRes_BiGauss_00.5_to_GALEX_FUV.fits.gz"
 
-    output_folder = "KERNELS"
-    os.makedirs(path, exist_ok=True)
+    output_folder = path
 
     file_name = os.path.join(output_folder, file_url.split("/")[-1])
-
     #print(f"Descargando {file_name}...")
     response = requests.get(file_url, stream=True)
     response.raise_for_status()
@@ -212,6 +211,5 @@ def get_data(inp_survey: str, ker_survey:str):
         if entry["From"] == inp_survey and entry["To"] == ker_survey:
             print(f"Valor SDSS→WISE: {entry['Value']}")
             return entry['Value']
-
-
-dowload_kernel('Kernel_HiRes_BiGauss_01.0_to_WISE_SINGLE_FRAME_3.4.fits','/home/polo/Escritorio/Works/Doctorado/Code/SFHmergers/images/kernels')
+        
+print(survey_pixel_scale('SDSS'))

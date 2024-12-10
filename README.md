@@ -5,5 +5,3 @@ discarted surveys: DES, Spitzer, HST ....
 
 
 
-comentarios:
-Añadir limpieza en aperturas como en hp
