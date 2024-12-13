@@ -1,5 +1,9 @@
 import os
 from pathlib import Path
+import logging
+
+import time
+from pyvo.dal.exceptions import DALFormatError
 
 import glob
 import copy
@@ -48,35 +52,42 @@ from astropy.utils.exceptions import AstropyWarning
 
 # 
 
-class get_images():
-    def __init__(self, name, position, size, surveys_init,versions = None, path = None, bkg_sub = True):
+class GetImages():
+    def __init__(self, name, ra,dec, size, surveys_init,versions = None, path = None, bkg_sub = True):
 
-
+        self.name = name
+        self.position = (ra,dec)
+        self.size = size
+        self.versions = versions
+        self.path = path
+        self.bkg_sub = bkg_sub
+        self.surveys = self.initialize_surveys(surveys_init, self.position, size)
+    def initialize_surveys(self, surveys_init, position, size):
         try:
-            parameters(surveys_init,position,size).check_validity()
-            self.name = name
-            
-            self.surveys = parameters(surveys_init,position,size).survey_values()
-        
-            self.ra, self.dec = position
-            self.size = size
-            self.versions = versions
-            self.path = path
-        except:
-            warnings.warn('ERROR')
+            parameters(surveys_init, position, size).check_validity()
+            return parameters(surveys_init, position, size).survey_values()
+        except Exception as e:
+            warnings.warn(f'ERROR: {e}')
+            return {}
 
 
-    def dowload(self):
-        gs = get_surveys()
-        for srv in list(self.surveys.keys()):
-            
-            gs.dowload_img(self.name,self.ra,self.dec,self.size, survey=srv,filters=self.surveys[srv],version=self.versions,path=self.path)
+    def download(self):
+        gs = GetSurveys()
+        for srv, filters in self.surveys.items():
+            try:
+                gs.dowload_img(self.name, self.position[0], self.position[1], self.size, survey=srv, filters=filters, version=self.versions, path=self.path)
+            except Exception as e:
+                warnings.warn(f'ERROR: {e}')
+                return {}
 
-        return f"Dowload completed in folder."
-class get_surveys():
 
-    def __init__(versions = None):
-        pass
+        return "Download completed in folder."
+    
+
+class GetSurveys():
+
+    def __init__(self,versions = None):
+        self.versions = versions
 
     def getimg_PS1(self, ra ,dec, size =3, filters = None):
 
@@ -439,6 +450,15 @@ class get_surveys():
 
         survey = "2MASS"
 
+        def retry_regsearch(max_retries=3, delay=5):
+            for attempt in range(max_retries):
+                try:
+                    return pyvo.regsearch(servicetype="image", keywords=["2mass"])
+                except DALFormatError as e:
+                    print(f"Error en intento {attempt + 1}: {e}")
+                    time.sleep(delay * (2 ** attempt))  # Backoff exponencial
+            raise Exception("No se pudo conectar al servicio después de varios intentos")
+
         if isinstance(size, (float, int)):
             size_degree = (size * u.arcmin).to(u.degree)
         else:
@@ -450,10 +470,14 @@ class get_surveys():
             coords = SkyCoord(
                 ra=ra, dec=dec, unit=(u.degree, u.degree), frame="icrs"
             )
+            twomass_services = retry_regsearch()
 
-            twomass_services = pyvo.regsearch(
-                servicetype="image", keywords=["2mass"]
-            )
+         #   twomass_services = pyvo.regsearch(
+          #      servicetype="image", keywords=["2mass"]
+          #
+          #   )
+
+
             table = twomass_services[0].search(pos=coords, size=size_degree)
             twomass_df = table.to_table().to_pandas()
             twomass_df = twomass_df[twomass_df.format == "image/fits"]
@@ -520,7 +544,7 @@ class get_surveys():
 
         return hdu_list
 
-    def getimg_LegacySurvey(self, ra ,dec, size =3, filters = None):
+    def getimg_LegacySurvey(self, ra ,dec, size =3, filters = None,version=None):
   
         survey = "LegacySurvey"
 
@@ -794,25 +818,25 @@ class get_surveys():
 
 
         if survey == 'PS1':
-            hdu_list = self.getimg_PS1(ra,dec,size=3,filters=filters)
+            hdu_list = self.getimg_PS1(ra,dec,size=size,filters=filters)
         elif survey == 'SDSS':
-            hdu_list = self.getimg_SDSS(ra,dec,size=3,filters=filters,version = None)
+            hdu_list = self.getimg_SDSS(ra,dec,size=size,filters=filters,version = None)
         elif survey == 'GALEX':
-            hdu_list = self.getimg_GALEX(ra,dec,size=3,filters=filters,version = None)
+            hdu_list = self.getimg_GALEX(ra,dec,size=size,filters=filters,version = None)
         elif survey == 'WISE':
-            hdu_list = self.getimg_WISE(ra,dec,size=3,filters=filters)
+            hdu_list = self.getimg_WISE(ra,dec,size=size,filters=filters)
         elif survey == 'unWISE':
-            hdu_list = self.getimg_unWISE(ra,dec,size=3,filters=filters,version = 'allwise')
+            hdu_list = self.getimg_unWISE(ra,dec,size=size,filters=filters,version = 'allwise')
         elif survey == '2MASS':
-            hdu_list = self.getimg_2MASS(ra,dec,size=3,filters=filters)
+            hdu_list = self.getimg_2MASS(ra,dec,size=size,filters=filters)
         elif survey == 'LegacySurvey':
-            hdu_list = self.getimg_LegacySurvey(ra,dec,size=3,filters=filters)
+            hdu_list = self.getimg_LegacySurvey(ra,dec,size=size,filters=filters)
         elif survey == 'VISTA':
-            hdu_list = self.getimg_VISTA(ra,dec,size=3,filters=filters,version = None)
+            hdu_list = self.getimg_VISTA(ra,dec,size=size,filters=filters,version = None)
         elif survey == 'SPLUS':
-            hdu_list = self.getimg_SPLUS(ra,dec,size=3,filters=filters)
+            hdu_list = self.getimg_SPLUS(ra,dec,size=size,filters=filters)
         elif survey == 'UKIDSS':
-            hdu_list = self.getimg_UKIDSS(ra,dec,size=3,filters=filters)
+            hdu_list = self.getimg_UKIDSS(ra,dec,size=size,filters=filters)
 
         if hdu_list:
             for hdu, filt in zip(hdu_list, filters):
@@ -833,6 +857,9 @@ class get_surveys():
   
 # funcion que diga que no hay imagenes para ese survey de datos en caso de none. 
 
+
+
+
 ra = 351.2577 
 dec = -0.00041
 ra_gal2 = 20.0108974646	
@@ -841,8 +868,10 @@ dec_gal2 = 14.3617675139
 ra_gal3=123.30674	
 dec_gal3 = 24.60798
 size= 3
-name ='merger2'
-surveys_ints = ['SDSS_r']
-gs = get_images(name,(ra_gal3,dec_gal3),size,surveys_ints)
+name ='SIT45'
+surveys_ints = ['LegacySurvey_r']
+gs = GetImages(name,ra,dec,size,surveys_ints)
 
-gs.dowload()
+
+gs.download()
+

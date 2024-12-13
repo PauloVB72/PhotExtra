@@ -211,5 +211,5 @@ def get_data(inp_survey: str, ker_survey:str):
         if entry["From"] == inp_survey and entry["To"] == ker_survey:
             print(f"Valor SDSS→WISE: {entry['Value']}")
             return entry['Value']
-        
+            
 print(survey_pixel_scale('SDSS'))
