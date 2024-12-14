@@ -13,14 +13,15 @@ from astropy.wcs import WCS
 
 from scipy.ndimage import zoom
 
-class convolveimg:
-    def __init__(self,survey:int,ker_survey:str,path:str,name:str):
+class ConvolutionIMG:
+    def __init__(self,survey:int,ker_survey:str,name:str,path=None,data=None):
 
         self.inp_surveys = survey
         self.ker_survey = ker_survey
         self.path = path
         self.name = name
-
+        self.data = data
+        
     def get_kernels(self):
         
         workdir = os.getenv("workdir", "images")
@@ -50,23 +51,27 @@ class convolveimg:
     def get_convolve(self):
         
         obj_dir = self.get_kernels()
-
-        path_inp = self.path+'/'+str(self.name)+'/'+str(self.inp_surveys)+'.fits'
-        hdu_inp = fits.open(path_inp)
-        data_inp = hdu_inp[0].data
-        header_inp = hdu_inp[0].header
-        wcs_inp = WCS(header_inp)
+        
+        if self.data is not None:
+            data_inp = self.data
+        else:
+            path_inp = self.path+'/'+str(self.name)+'/'+str(self.inp_surveys)+'.fits'
+            hdu_inp = fits.open(path_inp)
+            data_inp = hdu_inp[0].data
+            header_inp = hdu_inp[0].header
+            wcs_inp = WCS(header_inp)
 
         path_ker = str(obj_dir)
         hdu_ker = fits.open(path_ker)
         data_ker = hdu_ker[0].data
         header_ker = hdu_ker[0].header
+
         self.ker_survey = self.ker_survey.split('_')[0]
         self.inp_surveys = self.inp_surveys.split('_')[0]
 
-        pxs_ker = float(survey_pixel_scale(self.ker_survey))
-        pxs_inp = float(survey_pixel_scale(self.inp_surveys))
-        res = float(survey_resolution(self.ker_survey))
+        #pxs_ker = float(survey_pixel_scale(self.ker_survey))
+        #pxs_inp = float(survey_pixel_scale(self.inp_surveys))
+        #res = float(survey_resolution(self.ker_survey))
 
 
         astropy_conv = convolve_fft(data_inp, data_ker, nan_treatment = 'interpolate', normalize_kernel=True,
@@ -88,6 +93,6 @@ class convolveimg:
         return astropy_conv
     
 
-gs = convolveimg('SDSS_g','unWISE_W2','/home/polo/Escritorio/Works/Doctorado/Code/SFHmergers/images','SIT45')
-gs.get_convolve()
+#gs = convolveimg('SDSS_g','unWISE_W2','/home/polo/Escritorio/Works/Doctorado/Code/SFHmergers/images','SIT45')
+#gs.get_convolve()
 
