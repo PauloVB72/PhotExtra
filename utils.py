@@ -212,4 +212,42 @@ def get_data(inp_survey: str, ker_survey:str):
             print(f"Valor SDSS→WISE: {entry['Value']}")
             return entry['Value']
             
-print(survey_pixel_scale('SDSS'))
+
+
+
+def setup_directories(name,path=None):
+    # Obtener el directorio de trabajo
+    workdir = os.getenv('workdir/'+name, 'images')
+    
+    # Inicializar los caminos para 'images' y 'kernels'
+    images_path = None
+    kernels_path = None
+
+    # Verificar si el path es None
+    if path is None:
+        # Crear la carpeta 'images' en el workdir
+        images_path = os.path.join(workdir, 'images')
+        if not os.path.exists(images_path):
+            directory(images_path)
+        
+        # Crear la carpeta 'kernels' en el workdir
+        kernels_path = os.path.join(workdir, 'kernels')
+        if not os.path.exists(images_path):
+            directory(kernels_path)
+    else:
+        # Verificar si existe 'images' en el path dado
+        images_path = os.path.join(path+'/'+name, 'images')
+        if not os.path.exists(images_path):
+            directory(images_path)
+        
+        # Verificar si existe 'kernels' en el path dado
+        kernels_path = os.path.join(path+'/'+name, 'kernels')
+        if not os.path.exists(kernels_path):
+            directory(kernels_path)
+
+    # Retornar el diccionario con las rutas
+    return {'images': images_path, 'kernels': kernels_path,'main':path+'/'+name}
+
+# Ejemplo de uso
+result = setup_directories('Prueba_1',path = '/home/polo/Escritorio/Works/PHOTSFH_PRUEBAS')
+print(result)

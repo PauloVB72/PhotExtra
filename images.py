@@ -77,10 +77,8 @@ class GetImages():
             try:
                 gs.dowload_img(self.name, self.position[0], self.position[1], self.size, survey=srv, filters=filters, version=self.versions, path=self.path)
             except Exception as e:
-                warnings.warn(f'ERROR: {e}')
+                warnings.warn(f'ERRORes: {e}')
                 return {}
-
-
         return "Download completed in folder."
     
 
@@ -800,7 +798,8 @@ class GetSurveys():
         if path == None:
             path = workdir
         else:
-            pass
+            obj_dir = os.path.join(path, name) 
+            directory(obj_dir+'/images')
 
         if folder_exists(path) is True:
 
@@ -808,11 +807,11 @@ class GetSurveys():
             if folder_exists(obj_dir) is True:
                 pass
             else:
-                directory(obj_dir)
+                directory(obj_dir+'/images')
         else:
             directory(path)
             obj_dir = os.path.join(path, name) 
-            directory(obj_dir)
+            directory(obj_dir+'/images')
 
 
 
@@ -844,7 +843,7 @@ class GetSurveys():
                     continue  # skip missing filter/image
 
                 else:
-                    outfile = os.path.join(obj_dir, f"{survey}_{filt}.fits")
+                    outfile = os.path.join(obj_dir+'/images', f"{survey}_{filt}.fits")
                 if survey=='SDSS':
                     size_img = hdu.data.shape
                 else:

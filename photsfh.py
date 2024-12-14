@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from astropy.io import fits
-from utils import directory
+from utils import directory,setup_directories
 
 from images import GetImages
 from convolution import ConvolutionIMG
@@ -23,18 +23,22 @@ class PHOTsfh:
     def processing_img(self):
 
         data_cube = []
+        data_cube_HDU = []
 
         gs = GetImages(self.name, self.ra, self.dec, self.size, self.survey_filter,versions = self.version, path = self.path)
         gs.download()
 
-        path_inp = self.path+'images'
+        path_inp = self.path
+
+        survey_images = {srv: [] for srv in self.survey_filter}
 
         for srv_inp in self.survey_filter:
-            convolve_img = ConvolutionIMG(srv_inp,self.survey_ref, path_inp, self.name)
+            convolve_img = ConvolutionIMG(srv_inp,self.survey_ref,self.name, path=path_inp)
             convolved_image = convolve_img.get_convolve()
+            hdu_conv = fits.open(path_inp+'/'+self.name+'/images/'+srv_inp+'.fits')[0].header
             #data_cube.append(convolved_image)
-
-            resample_img = ReprojectIMG(srv_inp,self.survey_ref,path = None, data=convolved_image)
+            print('PASAMOS POR ACA')
+            resample_img = ReprojectIMG(srv_inp,self.survey_ref,self.name,path = path_inp, data=(convolved_image,hdu_conv))
             resampled_image = resample_img.get_reproject()
             data_cube.append(resampled_image)
 
@@ -51,14 +55,43 @@ class PHOTsfh:
         primary_hdu.header['SURVEYS'] = ', '.join(self.survey_filter)  # Lista de surveys
 
         # Save the data cube to a FITS file
+
         hdus = [primary_hdu]
-        for i, srv_inp in enumerate(self.survey_filter):
-            hdu = fits.ImageHDU(data=data_cube[i], name=f'SURVEY_{srv_inp}')
+
+        surveys_sep = list({filt.split('_')[0] for filt in self.survey_filter})
+
+        for i, srv_inp in enumerate(surveys_sep):
+            data_surveys = []
+            for j in self.survey_filter:
+                if j.split('_')[0] == srv_inp:
+                    hdu_fits = fits.open(path_inp+'/'+self.name+'/'+j+'.fits')
+                    data_surveys.append(hdu_fits[0].data)
+
+            hdu = fits.ImageHDU(data=np.array(data_surveys), name=f'SURVEY_{srv_inp}',header=hdu_fits[0].header)
+            hdu.header['SURVEY'] = srv_inp
+            hdu.header['NIMAGES'] = len(data_surveys) 
             hdus.append(hdu)
 
-        output_file = os.path.join(output_path, 'data_cube.fits')
-        hdu = fits.PrimaryHDU(data=data_cube)
-        hdu.writeto(output_file, overwrite=True)
+        last_hdu = fits.ImageHDU(data=data_cube, name='FINAL_PRODUCT')
+        hdus.append(last_hdu)
+
+        output_file = os.path.join(self.path, 'data_cube.fits')
+        fits.HDUList(hdus).writeto(output_file, overwrite=True)
 
         print(f"Data cube saved to {output_file}")
         return data_cube
+
+ra = 351.2577 
+dec = -0.00041
+
+ra_gal2 = 20.0108974646	
+dec_gal2 = 14.3617675139
+
+ra_gal3=123.30674	
+dec_gal3 = 24.60798
+size= 3
+name ='Prueba_1'
+surveys_ints = ['SDSS_r','SDSS_g','SDSS_i','SDSS_u','SDSS_z','GALEX_FUV','GALEX_NUV','WISE_W1',
+                'WISE_W2','WISE_W3']
+ph = PHOTsfh(name,ra,dec,size,surveys_ints,'WISE_W3',path='/home/polo/Escritorio/Works/PHOTSFH_PRUEBAS')
+ph.processing_img()
