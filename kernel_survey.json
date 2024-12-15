@@ -68,13 +68,13 @@
     {"From": "2MASS_J", "To": "unWISE_W3", "Value": "Kernel_HiRes_BiGauss_02.5_to_WISE_SINGLE_FRAME_11.6.fits"},
     {"From": "2MASS_Ks", "To": "unWISE_W3", "Value": "Kernel_HiRes_BiGauss_02.5_to_WISE_SINGLE_FRAME_11.6.fits"},
     {"From": "2MASS_H", "To": "unWISE_W3", "Value": "Kernel_HiRes_BiGauss_02.5_to_WISE_SINGLE_FRAME_11.6.fits"},
-    {"From": "WISE_W1", "To": "unWISE_W1", "Value": "None"},
-    {"From": "WISE_W2", "To": "unWISE_W1", "Value": "None"},
-    {"From": "WISE_W3", "To": "unWISE_W1", "Value": "None"},
-    {"From": "WISE_W1", "To": "unWISE_W2", "Value": "Kernel_HiRes_WISE_SINGLE_FRAME_3.4_to_WISE_SINGLE_FRAME_4.6.fits"},
-    {"From": "WISE_W2", "To": "unWISE_W2", "Value": "None"},
-    {"From": "WISE_W3", "To": "unWISE_W2", "Value": "None"},
-    {"From": "WISE_W1", "To": "unWISE_W3", "Value": "Kernel_HiRes_WISE_SINGLE_FRAME_3.4_to_WISE_SINGLE_FRAME_11.6.fits"},
-    {"From": "WISE_W2", "To": "unWISE_W3", "Value": "Kernel_HiRes_WISE_SINGLE_FRAME_4.6_to_WISE_SINGLE_FRAME_11.6.fits"},
-    {"From": "WISE_W3", "To": "unWISE_W3", "Value": "None"}
+    {"From": "unWISE_W1", "To": "unWISE_W1", "Value": "None"},
+    {"From": "unWISE_W2", "To": "unWISE_W1", "Value": "None"},
+    {"From": "unWISE_W3", "To": "unWISE_W1", "Value": "None"},
+    {"From": "unWISE_W1", "To": "unWISE_W2", "Value": "Kernel_HiRes_WISE_SINGLE_FRAME_3.4_to_WISE_SINGLE_FRAME_4.6.fits"},
+    {"From": "unWISE_W2", "To": "unWISE_W2", "Value": "None"},
+    {"From": "unWISE_W3", "To": "unWISE_W2", "Value": "None"},
+    {"From": "unWISE_W1", "To": "unWISE_W3", "Value": "Kernel_HiRes_WISE_SINGLE_FRAME_3.4_to_WISE_SINGLE_FRAME_11.6.fits"},
+    {"From": "unWISE_W2", "To": "unWISE_W3", "Value": "Kernel_HiRes_WISE_SINGLE_FRAME_4.6_to_WISE_SINGLE_FRAME_11.6.fits"},
+    {"From": "unWISE_W3", "To": "unWISE_W3", "Value": "None"}
 ]

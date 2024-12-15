@@ -53,14 +53,19 @@ from astropy.utils.exceptions import AstropyWarning
 # 
 
 class GetImages():
-    def __init__(self, name, ra,dec, size, surveys_init,versions = None, path = None, bkg_sub = True):
+    valid_versions = {
+        'SDSS': ['dr12', 'dr13', 'dr14', 'dr15', 'dr16', 'dr17'],
+        'GALEX': ['AIS', 'MIS', 'DIS', 'NGS', 'GII'],
+        'WISE': ['allwise', 'neo1', 'neo2', 'neo3', 'neo4', 'neo5', 'neo6', 'neo7'],
+    }
+    def __init__(self, name, ra,dec, size, surveys_init,versions = None, path = None, bkg_subtraction = True):
 
         self.name = name
         self.position = (ra,dec)
         self.size = size
         self.versions = versions
         self.path = path
-        self.bkg_sub = bkg_sub
+        self.bkg_subtraction = bkg_subtraction
         self.surveys = self.initialize_surveys(surveys_init, self.position, size)
     def initialize_surveys(self, surveys_init, position, size):
         try:
@@ -72,10 +77,19 @@ class GetImages():
 
 
     def download(self):
+
+
         gs = GetSurveys()
         for srv, filters in self.surveys.items():
             try:
-                gs.dowload_img(self.name, self.position[0], self.position[1], self.size, survey=srv, filters=filters, version=self.versions, path=self.path)
+                if self.versions is not None:
+                    for survey, ver in self.versions.items():
+                        if survey == srv:
+
+                            gs.dowload_img(self.name, self.position[0], self.position[1], self.size, survey=srv, filters=filters, version=ver, path=self.path)
+                        else:
+                            gs.dowload_img(self.name, self.position[0], self.position[1], self.size, survey=srv, filters=filters, version=None, path=self.path)
+
             except Exception as e:
                 warnings.warn(f'ERRORes: {e}')
                 return {}
@@ -83,9 +97,9 @@ class GetImages():
     
 
 class GetSurveys():
-
-    def __init__(self,versions = None):
+    def __init__(self,versions = None,bkg_subtraction = True):
         self.versions = versions
+        self.bkg_subtraction = bkg_subtraction
 
     def getimg_PS1(self, ra ,dec, size =3, filters = None):
 
@@ -326,6 +340,31 @@ class GetSurveys():
 
     def getimg_WISE(self, ra ,dec, size =3, filters = None, version=None):
 
+        """Downloads a set of GALEX fits images for a given set
+        of coordinates and filters.
+
+        Parameters
+        ----------
+        ra: str or float
+            Right ascension in degrees.
+        dec: str or float
+            Declination in degrees.
+        size: float or ~astropy.units.Quantity, default ``3``
+            Image size. If a float is given, the units are assumed to be arcmin.
+        filters: str, default ``None``
+            Filters to use. If ``None``, uses ``FUV, NUV``.
+        version: str, default ``None``
+            Version of GALEX images. Either Deep (``DIS``), Medium (``MIS``) or
+            All-Sky Imaging Survey (``AIS``), or Nearby Galaxy Survey (``NGS``) or
+            Guest Investigator Survey (``GII``). If ``None``, take the image with the
+            longest exposure time.
+
+        Return
+        ------
+        hdu_list: list
+            List with fits images for the given filters.
+            ``None`` is returned if no image is found.
+        """
         survey = "WISE"
 
         if isinstance(size, (float, int)):
@@ -374,7 +413,8 @@ class GetSurveys():
         for dt in hdu_list:
             try:
                 dt[0].data
-                dt[0].data = bkg_sub(dt[0].data,survey=survey)
+                if self.bkg_subtraction == True:
+                    dt[0].data = bkg_sub(dt[0].data,survey=survey)
             except:
                 pass       
         return hdu_list
@@ -536,7 +576,8 @@ class GetSurveys():
         for dt in hdu_list:
             try:
                 dt[0].data
-                dt[0].data = bkg_sub(dt[0].data,survey=survey)
+                if self.bkg_subtraction == True:
+                    dt[0].data = bkg_sub(dt[0].data,survey=survey)
             except:
                 pass
 

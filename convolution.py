@@ -4,7 +4,7 @@ from utils import dowload_kernel,setup_directories
 from utils import get_data
 from utils import directory
 from utils import folder_exists
-from utils import survey_pixel_scale ,survey_resolution
+from utils import survey_pixel_scale ,survey_resolution,pxscale
 
 from params import parameters
 from astropy.io import fits
@@ -24,18 +24,6 @@ class ConvolutionIMG:
         
     def get_kernels(self):
         
-        #workdir = os.getenv("workdir", "images")
-        #if self.path == None:
-         #   self.path = workdir
-
-        #if folder_exists(self.path):
-         #   obj_dir = os.path.join(self.path, 'kernels') 
-          #  if not folder_exists(obj_dir):
-           #     directory(obj_dir)
-        #else:
-         #   directory(self.path)
-          #  obj_dir = os.path.join(self.path, 'kernels') 
-           # directory(obj_dir)
         obj_dir = setup_directories(self.name,path=self.path)['main']
         obj_dir_ker = setup_directories(self.name,path=self.path)['kernels']
 
@@ -75,26 +63,35 @@ class ConvolutionIMG:
         self.ker_survey = self.ker_survey.split('_')[0]
         self.inp_surveys = self.inp_surveys.split('_')[0]
 
-        #pxs_ker = float(survey_pixel_scale(self.ker_survey))
-        #pxs_inp = float(survey_pixel_scale(self.inp_surveys))
-        #res = float(survey_resolution(self.ker_survey))
+        pxs_ker = pxscale(header_ker)
+        pxs_inp = pxscale(header_inp)
+        if pxs_ker != pxs_inp:
+                ratio = pxs_ker/pxs_inp
+                size = ratio * data_ker.shape[0]
+                if round(size) % 2 == 0:
+                    size += 1
+                    ratio = size / data_ker.shape[0]
+        else:
+                ratio = 1.
+                #res = float(survey_resolution(self.ker_survey))
 
+        newkernel = zoom(data_ker, ratio) / ratio**2
 
-        astropy_conv = convolve_fft(data_inp, data_ker, nan_treatment = 'interpolate', normalize_kernel=True,
-                                preserve_nan=True)
+        astropy_conv = convolve_fft(data_inp, newkernel, nan_treatment = 'interpolate', normalize_kernel=True, preserve_nan=True)
         
-       # import matplotlib.pyplot as plt
+        #import matplotlib.pyplot as plt
        # import numpy as np
 
-        #fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+       # fig, axs = plt.subplots(1, 3, figsize=(15, 5))
 
-       # axs[0].imshow(data_inp, cmap='gray', origin='lower',vmin=np.nanmean(data_inp)-np.nanstd(data_inp),vmax=np.nanmean(data_inp)+np.nanstd(data_inp),
-        #        interpolation='nearest')
+        #axs[0].imshow(data_inp, cmap='gray', origin='lower',vmin=np.nanmean(data_inp)-np.nanstd(data_inp),vmax=np.nanmean(data_inp)+np.nanstd(data_inp),
+         #       interpolation='nearest')
 
        # axs[1].imshow(data_ker, cmap='gray', origin='lower',vmin=np.nanmean(data_ker)-np.nanstd(data_ker),vmax=np.nanmean(data_ker)+np.nanstd(data_ker),
-       #         interpolation='nearest')
+        #        interpolation='nearest')
        # axs[2].imshow(astropy_conv, cmap='gray', origin='lower',vmin=np.nanmean(astropy_conv)-np.nanstd(astropy_conv),vmax=np.nanmean(astropy_conv)+np.nanstd(astropy_conv),
-        #        interpolation='nearest')       
+        #        interpolation='nearest')      
+       # plt.title(self.inp_surveys) 
        # plt.show() 
         return astropy_conv
     

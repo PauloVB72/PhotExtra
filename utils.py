@@ -248,6 +248,34 @@ def setup_directories(name,path=None):
     # Retornar el diccionario con las rutas
     return {'images': images_path, 'kernels': kernels_path,'main':path+'/'+name}
 
-# Ejemplo de uso
-result = setup_directories('Prueba_1',path = '/home/polo/Escritorio/Works/PHOTSFH_PRUEBAS')
-print(result)
+def pxscale(header):
+          """
+              INPUT:
+                      data: type ndarray, image data
+                      header: typer HEADER, header of the image
+              OUTPUT:
+                      RETURN THE PIXELSCALE OF THE IMAGE
+              """
+
+          keywords = ['PIXSCALE', 'SECPIX', 'CDELT1']
+          pixelscale = None
+          keys = [k for k in header.keys()]
+
+          for keyword in keywords:
+              if keyword in keys:
+                  pixelscale = header[keyword]*3600
+
+                  return np.abs(pixelscale)
+          if pixelscale is None:
+              if ('CD1_1' in keys) and ('CD1_2' in keys):
+                  pixelscale = np.sqrt(header['CD1_1']**2 + header['CD1_2']**2)*3600
+                  return np.abs(pixelscale)
+          else:
+              print('No pixel scale from header')
+              while True:
+                  pixelscale = input('Please put in pixel scale value in arcsec/pixel')
+                  try:
+                      pixelscale = float(pixelscale)
+                      return np.abs(pixelscale)
+                  except ValueError:
+                      pass
