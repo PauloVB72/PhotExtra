@@ -217,7 +217,7 @@ def get_data(inp_survey: str, ker_survey:str):
 
 def setup_directories(name,path=None):
     # Obtener el directorio de trabajo
-    workdir = os.getenv('workdir/'+name, 'images')
+    workdir = os.getenv('workdir', name)
     
     # Inicializar los caminos para 'images' y 'kernels'
     images_path = None
@@ -226,6 +226,9 @@ def setup_directories(name,path=None):
     # Verificar si el path es None
     if path is None:
         # Crear la carpeta 'images' en el workdir
+        if not os.path.exists(workdir): 
+            directory(workdir)
+
         images_path = os.path.join(workdir, 'images')
         if not os.path.exists(images_path):
             directory(images_path)
@@ -235,9 +238,13 @@ def setup_directories(name,path=None):
         if not os.path.exists(images_path):
             directory(kernels_path)
     else:
+        if not os.path.exists(path+'/'+name): 
+            directory(path+'/'+name)
+            
         # Verificar si existe 'images' en el path dado
         images_path = os.path.join(path+'/'+name, 'images')
         if not os.path.exists(images_path):
+            print('NO EXISTE')
             directory(images_path)
         
         # Verificar si existe 'kernels' en el path dado

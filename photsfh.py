@@ -24,7 +24,8 @@ class PHOTsfh:
 
         data_cube = []
         data_cube_HDU = []
-
+        print('.................................')
+        print(self.path)
         gs = GetImages(self.name, self.ra, self.dec, self.size, self.survey_filter,versions = self.version, path = self.path)
         gs.download()
 
@@ -93,7 +94,11 @@ dec_gal2 = 14.3617675139
 ra_gal3=123.30674	
 dec_gal3 = 24.60798
 size= 3
-name ='Prueba_1'
+
+ra_gal4 = 	122.390684521
+dec_gal4 = 36.9852665635
+
+name ='Prueba_3'
 surveys_ints = ['SDSS_r','SDSS_g','SDSS_i','SDSS_u','SDSS_z','GALEX_FUV','GALEX_NUV','unWISE_W1',
                 'unWISE_W2','unWISE_W3']
 
@@ -101,5 +106,5 @@ version = {
     'GALEX': 'DIS',
 }
 
-ph = PHOTsfh(name,ra,dec,size,surveys_ints,'unWISE_W3',path='/home/polo/Escritorio/Works/PHOTSFH_PRUEBAS',version=version)
+ph = PHOTsfh(name,ra_gal4,dec_gal4,size,surveys_ints,'unWISE_W3',path='/home/polo/Escritorio/Works/PHOTSFH_PRUEBAS',version=version)
 ph.processing_img()

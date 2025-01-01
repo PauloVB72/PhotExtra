@@ -37,7 +37,7 @@ esahubble = ESAHubble()
 
 from reproject import reproject_interp
 from params import parameters
-from utils import folder_exists,directory
+from utils import folder_exists,directory,setup_directories
 from utils import survey_pixel_scale
 from utils import check_filters
 from utils import bkg_sub
@@ -77,7 +77,6 @@ class GetImages():
 
 
     def download(self):
-
 
         gs = GetSurveys()
         for srv, filters in self.surveys.items():
@@ -325,7 +324,9 @@ class GetSurveys():
         for filt in filters:
             hdu = hdu_dict[filt]
             if hdu is None:
+                print('No image in this filter')
                 continue  # no image in this filter
+            print(filt)
             # trim data to requested size
             img_wcs = wcs.WCS(hdu[0].header)
             pos = SkyCoord(ra=ra * u.degree, dec=dec * u.degree)
@@ -834,26 +835,7 @@ class GetSurveys():
     
     def dowload_img(self,name, ra ,dec,size =3, survey='SDSS',filters = None,version = None, path = None, overwrite=True):
         
-        filters = check_filters(survey,filters)
-        workdir = os.getenv("workdir", "images")
-        if path == None:
-            path = workdir
-        else:
-            obj_dir = os.path.join(path, name) 
-            directory(obj_dir+'/images')
-
-        if folder_exists(path) is True:
-
-            obj_dir = os.path.join(path, name) 
-            if folder_exists(obj_dir) is True:
-                pass
-            else:
-                directory(obj_dir+'/images')
-        else:
-            directory(path)
-            obj_dir = os.path.join(path, name) 
-            directory(obj_dir+'/images')
-
+        obj_dir = setup_directories(name,path=path)['main']
 
 
 
