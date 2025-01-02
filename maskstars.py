@@ -1,3 +1,18 @@
+from astroquery.sdss import SDSS
+from astroquery.vizier import Vizier
+from astropy.coordinates import SkyCoord
+from astropy.wcs import WCS
+from astropy import units as u
+Vizier.ROW_LIMIT = -1
+import numpy as np
+import matplotlib.pyplot as plt
+from skimage.filters import threshold_otsu
+from scipy.ndimage import label, generate_binary_structure, gaussian_filter
+from skimage.morphology import remove_small_objects, disk, binary_dilation
+from astropy.stats import SigmaClip
+from photutils.background import Background2D, MedianBackground
+import sep
+
 def arcsec_to_deg(segundos):
 
   minutos = segundos / 60
@@ -13,19 +28,6 @@ def deg_to_arcmin(grados):
 
   minutos_arco = grados * 60
   return minutos_arco
-
-from astroquery.sdss import SDSS
-from astroquery.vizier import Vizier
-from astropy.coordinates import SkyCoord
-from astropy import units as u
-Vizier.ROW_LIMIT = -1
-import numpy as np
-import matplotlib.pyplot as plt
-from skimage.filters import threshold_otsu
-from scipy.ndimage import label, generate_binary_structure, gaussian_filter
-from skimage.morphology import remove_small_objects, disk, binary_dilation
-from astropy.stats import SigmaClip
-from photutils.background import Background2D, MedianBackground
 
 
 
@@ -138,9 +140,8 @@ class OBJECTS_IMG:
                 y += np.sin(angle)
     
         return mask
-    
-    
-    def create_star_mask(self, image, method="otsu", intensity_threshold=None, spike_threshold=0.3, gradient_threshold=0.05):
+
+    def create_star_mask(self, image, method="otsu", intensity_threshold=None, spike_threshold=0.3, gradient_threshold=0.05,survey = 'SDSS'):
         # Accede directamente a self.objects_search
         objetos_img = self.objects_search()
         wcs = WCS(self.hdu[0].header)
@@ -152,12 +153,18 @@ class OBJECTS_IMG:
 
         
         mask = np.zeros_like(self.hdu[0].data, dtype=bool)
-        for i in range(len(estrella)):
-            spike_mask = find_and_mask_spikes(self.hdu[0].data, (estrella_x[i], estrella_y[i]),spike_threshold)
-            mask |= spike_mask
-        mask = remove_small_objects(mask, min_size=20)
-        return mask
 
+        if survey == 'SDSS':
+            for i in range(len(estrella)):
+                spike_mask = OBJECTS_IMG.find_and_mask_spikes(self.hdu[0].data, (estrella_x[i], estrella_y[i]),spike_threshold)
+                mask |= spike_mask
+            mask = remove_small_objects(mask, min_size=20)
+            return mask
+        else:
+            bkg = sep.Background(self.hdu[0].data)
+            background = bkg.back()  # Fondo estimado
+
+            objects = sep.extract(self.hdu[0].data, 5, err=bkg.globalrms, deblend_cont=0.005)
         
     def masked(self):
         
