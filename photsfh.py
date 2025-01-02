@@ -35,7 +35,7 @@ class PHOTsfh:
 
         for srv_inp in self.survey_filter:
             if srv_inp != self.survey_ref:
-
+                
                 convolve_img = ConvolutionIMG(srv_inp,self.survey_ref,self.name, path=path_inp)
                 convolved_image = convolve_img.get_convolve()
                 hdu_conv = fits.open(path_inp+'/'+self.name+'/images/'+srv_inp+'.fits')[0].header

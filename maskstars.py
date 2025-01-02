@@ -1,16 +1,3 @@
-
-from astroquery.sdss import SDSS
-from astroquery.vizier import Vizier
-from astropy.coordinates import SkyCoord
-from astropy import units as u
-Vizier.ROW_LIMIT = -1
-import numpy as np
-import matplotlib.pyplot as plt
-from skimage.filters import threshold_otsu
-from scipy.ndimage import label, generate_binary_structure, gaussian_filter
-from skimage.morphology import remove_small_objects, disk, binary_dilation
-from astropy.stats import SigmaClip
-from photutils.background import Background2D, MedianBackground
 def arcsec_to_deg(segundos):
 
   minutos = segundos / 60
@@ -26,6 +13,20 @@ def deg_to_arcmin(grados):
 
   minutos_arco = grados * 60
   return minutos_arco
+
+from astroquery.sdss import SDSS
+from astroquery.vizier import Vizier
+from astropy.coordinates import SkyCoord
+from astropy import units as u
+Vizier.ROW_LIMIT = -1
+import numpy as np
+import matplotlib.pyplot as plt
+from skimage.filters import threshold_otsu
+from scipy.ndimage import label, generate_binary_structure, gaussian_filter
+from skimage.morphology import remove_small_objects, disk, binary_dilation
+from astropy.stats import SigmaClip
+from photutils.background import Background2D, MedianBackground
+
 
 
 class OBJECTS_IMG:
@@ -58,7 +59,7 @@ class OBJECTS_IMG:
         tycho2_catalog = "I/259/tyc2"  # Identificador del catálogo Tycho-2
         gaia_catalog = "I/345/gaia2"  # Identificador del catálogo Gaia DR2
     
-        # Consultar Tycho-2
+        # Consultar Tycho-2s.open('/home/polo/Escritorio/Works/PHOTSFH_PRUEBAS/Prueba_1/images/SDSS_r.fits')
         tycho2_results = Vizier.query_region(center, radius=radius, catalog=tycho2_catalog)
         tycho2_table = tycho2_results[0] if tycho2_results else None
     
@@ -140,8 +141,7 @@ class OBJECTS_IMG:
     
     
     def create_star_mask(self, image, method="otsu", intensity_threshold=None, spike_threshold=0.3, gradient_threshold=0.05):
-
-
+        # Accede directamente a self.objects_search
         objetos_img = self.objects_search()
         wcs = WCS(self.hdu[0].header)
         estrella = []
@@ -153,7 +153,7 @@ class OBJECTS_IMG:
         
         mask = np.zeros_like(self.hdu[0].data, dtype=bool)
         for i in range(len(estrella)):
-            spike_mask =   OBJECTS_IMG.find_and_mask_spikes(self.hdu[0].data, (estrella_x[i], estrella_y[i]),spike_threshold)
+            spike_mask = find_and_mask_spikes(self.hdu[0].data, (estrella_x[i], estrella_y[i]),spike_threshold)
             mask |= spike_mask
         mask = remove_small_objects(mask, min_size=20)
         return mask
@@ -179,52 +179,69 @@ class OBJECTS_IMG:
         header = self.hdu[0].header
         data = self.hdu[0].data
         wcs = WCS(header)
-        xymin, xymax = wcs.pixel_to_world([0,data.shape[0]], [0,data.shape[1]])
+        coord_pxtoworld = wcs.pixel_to_world([0,data.shape[0]], [0,data.shape[1]])
+        xymin = coord_pxtoworld[0]
+        xymax = coord_pxtoworld[1]
+        print(xymin,xymax)
         filtered_galaxies = []
         filtered_stars = []
+        
         for row in tab_gal.iterrows():
             ra, dec = row[1], row[2]
 
-            if xymin.ra.value <= ra <= xymax.ra.value and xymin.dec.value <= dec <= xymax.dec.value:
+            if xymax.ra.value <= ra <= xymin.ra.value and xymin.dec.value <= dec <= xymax.dec.value:
 
                 filtered_galaxies.append((ra, dec))
         filtered_galaxies.append((self.ra, self.dec))
         
-        for row in tab_tycho.iterrows():
-            ra, dec = row[8], row[9]
-
-            if xymin.ra.value <= ra <= xymax.ra.value and xymin.dec.value <= dec <= xymax.dec.value:
-               
-                filtered_stars.append((ra, dec))
+        if tab_tycho is not None:
+    
+            for row in tab_tycho.iterrows():
+                ra, dec = row[8], row[9]
+                if xymax.ra.value <= ra <= xymin.ra.value and xymin.dec.value <= dec <= xymax.dec.value:
+                   
+                    filtered_stars.append((ra, dec))
         
         for row in tab_gaia.iterrows():
             ra, dec = row[0], row[2]
-
-            if xymin.ra.value <= ra <= xymax.ra.value and xymin.dec.value <= dec <= xymax.dec.value:
-               
+            
+            if xymax.ra.value <= ra <= xymin.ra.value and xymin.dec.value <= dec <= xymax.dec.value:
+                
                 filtered_stars.append((ra, dec))
+            
+        galaxies_coords = SkyCoord([gal[0] for gal in filtered_galaxies], 
+                                   [gal[1] for gal in filtered_galaxies], unit="deg")
+        filtered_stars_result = []
+    
+        # Calcular separaciones angulares
+        for ra_star, dec_star in filtered_stars:
+            star_coord = SkyCoord(ra_star, dec_star, unit="deg")
+            separations = star_coord.separation(galaxies_coords)
+            
+            
+            if all(separations.arcsecond > 15):
+                filtered_stars_result.append((ra_star, dec_star))
         
-        objetos = []
-
-        for star in range(len(filtered_stars)):
-            
-            ra_star, dec_star = filtered_stars[star]
-            
-            if ra_star< 100.:
-                ra_star_ = ra_star + 360.
-                
-            for gal in range(len(filtered_galaxies)):
-                
-                ra_gal, dec_gal = filtered_galaxies[gal]
-                
-                if ra_gal< 100.:
-                    ra_gal_ = ra_gal + 360. 
+        #objetos = []
+       # for star in range(len(filtered_stars)):     
+        #    ra_star, dec_star = filtered_stars[star]  
+         #   if ra_star < 100.:
+          #      ra_star_ = ra_star + 360.
+           # else:
+        #        ra_star_ = ra_star
+         #   for gal in range(len(filtered_galaxies)):
+        #        
+          #      ra_gal, dec_gal = filtered_galaxies[gal]
+           #     
+             #   if ra_gal< 100.:
+            #        ra_gal_ = ra_gal + 360. 
+             #   else:
+              #      ra_gal_ = ra_gal
                     
-                d1 = np.abs(ra_star_- ra_gal_)*3600
-                d2 = np.abs(dec_star - dec_gal)*3600
-                if d1<=15 and d2<=15:
-                    objetos.append((ra_star,dec_star))
-        rem = [filtered_stars.remove(x) for x in objetos]
+              #  d1 = np.abs(ra_star_- ra_gal_)*3600
+              #  d2 = np.abs(dec_star - dec_gal)*3600
+              #  if d1<=15 and d2<=15:
+               #     objetos.append((ra_star,dec_star))
+        #rem = [filtered_stars.remove(x) for x in objetos]
         
-        return filtered_stars,filtered_galaxies
-        
+        return filtered_stars_result
