@@ -14,13 +14,13 @@ from astropy.wcs import WCS
 from scipy.ndimage import zoom
 
 class ConvolutionIMG:
-    def __init__(self,survey:int,ker_survey:str,name:str,path=None,data=None):
+    def __init__(self,survey:int,ker_survey:str,name:str,path=None,hdul=None):
 
         self.inp_surveys = survey
         self.ker_survey = ker_survey
         self.path = path
         self.name = name
-        self.data = data
+        self.hdul = hdul
         
     def get_kernels(self):
         
@@ -46,8 +46,12 @@ class ConvolutionIMG:
         print('--------------------------------')
         print(obj_dir)
 
-        if self.data is not None:
-            data_inp = self.data
+        if self.hdul is not None:
+            hdu_inp = self.hdul
+            data_inp = hdu_inp[0].data
+            header_inp = hdu_inp[0].header
+            wcs_inp = WCS(header_inp)
+            
         else:
             path_inp = self.path+'/'+str(self.name)+'/images/'+str(self.inp_surveys)+'.fits'
             hdu_inp = fits.open(path_inp)

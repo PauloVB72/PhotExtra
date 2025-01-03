@@ -1,7 +1,7 @@
+
 from astroquery.sdss import SDSS
 from astroquery.vizier import Vizier
 from astropy.coordinates import SkyCoord
-from astropy.wcs import WCS
 from astropy import units as u
 Vizier.ROW_LIMIT = -1
 import numpy as np
@@ -12,6 +12,8 @@ from skimage.morphology import remove_small_objects, disk, binary_dilation
 from astropy.stats import SigmaClip
 from photutils.background import Background2D, MedianBackground
 import sep
+from astropy.wcs import WCS
+
 
 def arcsec_to_deg(segundos):
 
@@ -31,8 +33,10 @@ def deg_to_arcmin(grados):
 
 
 
+
 class OBJECTS_IMG:
-    def __init__(self, hdu, ra, dec, size, spike_threshold, gradient_threshold):
+    def __init__(self, hdu, ra, dec, size, spike_threshold = 0.3, gradient_threshold = 0.05,
+                survey = 'SDSS', sep_threshold = 5, sep_deblend = 0.005, r = 3.8):
         
         self.hdu = hdu
         self.ra = ra
@@ -41,6 +45,11 @@ class OBJECTS_IMG:
         Vizier.ROW_LIMIT = -1
         self.spike_threshold = spike_threshold
         self.gradient_threshold = gradient_threshold
+        self.survey = survey
+        self.sep_threshold = sep_threshold
+        self.r = r 
+        self.sep_deblend = sep_deblend
+        self.surveys_highresol = ['SDSS', 'LegacySurvey','SPLUS','PS1']
         
     @staticmethod
     def query_stars(ra, dec, radius=3):
@@ -94,13 +103,8 @@ class OBJECTS_IMG:
         # Ejecuta la consulta
         try:
             results = SDSS.query_sql(query)
-            # Convierte los resultados a una tabla Astropy para manejo sencillo
-            #table = Table(results)
             return results
-            
-            # Guarda los resultados en un archivo CSV
-           # table.write("galaxias_sdss.csv", format="csv", overwrite=True)
-           # print("Consulta completada y resultados guardados en 'galaxias_sdss.csv'")
+
         except Exception as e:
             print(f"Error al realizar la consulta: {e}")
 
@@ -141,8 +145,19 @@ class OBJECTS_IMG:
     
         return mask
 
-    def create_star_mask(self, image, method="otsu", intensity_threshold=None, spike_threshold=0.3, gradient_threshold=0.05,survey = 'SDSS'):
+    @staticmethod
+    def sep_aperture(hdu, deblend_cont = 0.005 ,threshold= 5 ):
+        
+        wcs = WCS(hdu[0].header)
+        data = hdu[0].data.byteswap().newbyteorder()
+        bkg = sep.Background(data)
+        objects = sep.extract(data, threshold, err=bkg.globalrms, deblend_cont=deblend_cont)
+        
+        return objects
+
+    def create_star_mask(self, image, sep_threshold= 5, sep_deblend = 0.005 ,r = 3.8, spike_threshold=0.3, gradient_threshold=0.05, survey = 'SDSS'):
         # Accede directamente a self.objects_search
+        
         objetos_img = self.objects_search()
         wcs = WCS(self.hdu[0].header)
         estrella = []
@@ -151,30 +166,64 @@ class OBJECTS_IMG:
             estrella.append((int(obj_x),int(obj_y)))
         estrella_x ,estrella_y= zip(*estrella)
 
-        
         mask = np.zeros_like(self.hdu[0].data, dtype=bool)
+        
 
-        if survey == 'SDSS':
+        if survey in self.surveys_highresol:
             for i in range(len(estrella)):
-                spike_mask = OBJECTS_IMG.find_and_mask_spikes(self.hdu[0].data, (estrella_x[i], estrella_y[i]),spike_threshold)
+                spike_mask = OBJECTS_IMG.find_and_mask_spikes(self.hdu[0].data, (estrella_x[i], estrella_y[i]),spike_threshold,gradient_threshold)
                 mask |= spike_mask
+                
             mask = remove_small_objects(mask, min_size=20)
-            return mask
-        else:
-            bkg = sep.Background(self.hdu[0].data)
-            background = bkg.back()  # Fondo estimado
 
-            objects = sep.extract(self.hdu[0].data, 5, err=bkg.globalrms, deblend_cont=0.005)
+        else:
+            
+            objects = OBJECTS_IMG.sep_aperture(self.hdu, deblend_cont = sep_deblend, threshold = sep_threshold)
+            objs_coord = wcs.pixel_to_world(objects["x"], objects["y"])
+            obj_cat = []
+
+            for ra_star, dec_star in objetos_img[0]:
+                
+                star_coord = SkyCoord(ra_star, dec_star, unit="deg")
+                
+                separations = star_coord.separation(objs_coord)
+                print(separations.arcsecond )
+                objs_filters = objs_coord[np.where(separations.arcsecond < 10)]
+                if objs_filters :
+                    obj_cat.append(np.where(separations.arcsecond < 10)[0][0])
+                    
+            sep.mask_ellipse(
+                            mask,
+                            objects["x"][obj_cat],
+                            objects["y"][obj_cat],
+                            objects["a"][obj_cat],
+                            objects["b"][obj_cat],
+                            objects["theta"][obj_cat],
+                            r=r,
+                        )
+        plt.imshow(mask,vmin=np.mean(mask)-np.std(mask),vmax=np.mean(mask)+np.std(mask),origin='lower')
+        plt.show()
+        return mask
+
         
     def masked(self):
         
-        mask = self.create_star_mask(self.hdu[0].data,spike_threshold=self.spike_threshold, gradient_threshold=self.gradient_threshold)
-        
-        sigma_clip = SigmaClip(sigma=3.0)
-        bkg_estimator = MedianBackground()
-        bkg = Background2D(self.hdu[0].data, (50, 50), filter_size=(3, 3),sigma_clip=sigma_clip, bkg_estimator=bkg_estimator)
-        data_mk = np.copy(self.hdu[0].data)
-        data_mk[mask] = bkg.background_rms_median
+        mask = self.create_star_mask(self.hdu[0].data,survey = self.survey, sep_threshold = self.sep_threshold, r = self.r, sep_deblend = self.sep_deblend,
+                                     spike_threshold=self.spike_threshold, gradient_threshold=self.gradient_threshold)
+        if self.survey in self.surveys_highresol:
+            sigma_clip = SigmaClip(sigma=3.0)
+            bkg_estimator = MedianBackground()
+            bkg = Background2D(self.hdu[0].data, (50, 50), filter_size=(3, 3),sigma_clip=sigma_clip, bkg_estimator=bkg_estimator)
+            data_mk = np.copy(self.hdu[0].data)
+            data_mk[mask] = bkg.background_rms_median
+        else:
+            
+            wcs = WCS(self.hdu[0].header)
+            data = self.hdu[0].data.byteswap().newbyteorder()
+            bkg = sep.Background(data)
+            data_mk = np.copy(self.hdu[0].data)
+            data_mk[mask] = bkg.globalrms
+            
         return data_mk
 
 
@@ -189,7 +238,6 @@ class OBJECTS_IMG:
         coord_pxtoworld = wcs.pixel_to_world([0,data.shape[0]], [0,data.shape[1]])
         xymin = coord_pxtoworld[0]
         xymax = coord_pxtoworld[1]
-        print(xymin,xymax)
         filtered_galaxies = []
         filtered_stars = []
         
@@ -229,26 +277,19 @@ class OBJECTS_IMG:
             if all(separations.arcsecond > 15):
                 filtered_stars_result.append((ra_star, dec_star))
         
-        #objetos = []
-       # for star in range(len(filtered_stars)):     
-        #    ra_star, dec_star = filtered_stars[star]  
-         #   if ra_star < 100.:
-          #      ra_star_ = ra_star + 360.
-           # else:
-        #        ra_star_ = ra_star
-         #   for gal in range(len(filtered_galaxies)):
-        #        
-          #      ra_gal, dec_gal = filtered_galaxies[gal]
-           #     
-             #   if ra_gal< 100.:
-            #        ra_gal_ = ra_gal + 360. 
-             #   else:
-              #      ra_gal_ = ra_gal
-                    
-              #  d1 = np.abs(ra_star_- ra_gal_)*3600
-              #  d2 = np.abs(dec_star - dec_gal)*3600
-              #  if d1<=15 and d2<=15:
-               #     objetos.append((ra_star,dec_star))
-        #rem = [filtered_stars.remove(x) for x in objetos]
+        return filtered_stars_result,filtered_galaxies
         
-        return filtered_stars_result
+
+class ObjectsIMG(OBJECTS_IMG):
+
+    def __init__(self, hdu, ra, dec, size, spike_threshold = 0.3, gradient_threshold = 0.05,
+                survey = 'SDSS', sep_threshold = 5, sep_deblend = 0.005, r = 3.8):
+        
+        super().__init__(hdu, ra, dec, size, spike_threshold, gradient_threshold, survey, sep_threshold, sep_deblend, r)
+        self.hdu = hdu
+
+    
+    def masked(self):
+        newdata = super().masked()
+        self.hdu[0].data = newdata
+        return self.hdu
