@@ -11,7 +11,7 @@ import json
 from astropy.io import fits
 from astropy.wcs import WCS
 
-
+import sep
 
 path = '/home/polo/Escritorio/Works/Doctorado/Code/SFHmergers/Photsfh/prm_config.csv'
 
@@ -184,6 +184,35 @@ def bkg_sub(data:np.array,survey:str):
     else:
         return  data
 
+
+def bkg_data(data, mask,bkg_type = 'astropy',sigma=3.0):
+    if bkg_type == 'astropy':
+            
+            sigma_clip = SigmaClip(sigma=sigma)
+            bkg_estimator = MedianBackground()
+            bkg = Background2D(data, (50, 50), filter_size=(3, 3),sigma_clip=sigma_clip, bkg_estimator=bkg_estimator)
+            data_mk = np.copy(data)
+            background_mean = bkg.background_median
+            background_rms = bkg.background_rms_median
+            simulated_background = np.random.normal(loc=background_mean, scale=background_rms, size=data.shape)
+            
+            data_mk[mask] = simulated_background[mask]
+            
+            return data_mk
+    
+    elif bkg_type == 'sep':
+                    
+            data = data.byteswap().newbyteorder()
+            bkg = sep.Background(data)
+            data_mk = np.copy(data)
+            background_mean = bkg.back()  # Fondo medio
+            background_rms = bkg.rms()  # RMS del fondo
+            background_rms = np.maximum(background_rms, 0)
+            simulated_background = np.random.normal(loc=background_mean, scale=background_rms, size=data.shape)
+            
+            data_mk[mask] = simulated_background[mask]
+            
+            return data_mk
 
 def header_changes(hdu,ra:float,dec:float,size_img:list,survey=None):
     if survey == 'SDSS':

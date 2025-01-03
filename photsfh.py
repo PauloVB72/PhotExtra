@@ -6,10 +6,11 @@ from images import GetImages
 from convolution import ConvolutionIMG
 from resampling import ReprojectIMG
 from maskstars import  ObjectsIMG
+import matplotlib.pyplot as plt
 
 class PHOTsfh:
 
-    def __init__(self ,name ,ra ,dec ,size , survey_filter,survey_ref, version=None, path=None, mask_stars = True, spike_threshold = 0.3, gradient_threshold = 0.05,
+    def __init__(self ,name ,ra ,dec ,size , survey_filter,survey_ref, version=None, path=None, mask_stars = True, spike_threshold = 0.03, gradient_threshold = 0.05,
                  sep_threshold = 5, sep_deblend = 0.005, r = 3.8, **kwargs):
         """ Photometry by SFH models"""
         self.name = name
@@ -50,7 +51,11 @@ class PHOTsfh:
                     masking = ObjectsIMG(hdu, self.ra, self.dec, self.size, spike_threshold = self.spike_threshold,
                                                   gradient_threshold = self.gradient_threshold, survey = srv_org,
                                                    sep_threshold = self.sep_threshold, sep_deblend = self.sep_deblend, r = self.r).masked()
-                    
+                   # hdu= fits.open(path_inp+'/'+self.name+'/images/'+srv_inp+'.fits')
+                   # fig, (ax1, ax2) = plt.subplots(1, 2)
+                   # ax1.imshow(masking[0].data,vmin=np.mean(masking[0].data)-np.std(masking[0].data),vmax=np.mean(masking[0].data)+np.std(masking[0].data),origin='lower')
+                   # ax2.imshow(hdu[0].data,vmin=np.mean(hdu[0].data)-np.std(hdu[0].data),vmax=np.mean(hdu[0].data)+np.std(hdu[0].data),origin='lower')
+                   # plt.show()
                     convolve_img = ConvolutionIMG(srv_inp,self.survey_ref,self.name, path=path_inp, hdul=masking)
                     convolved_image = convolve_img.get_convolve()
 
@@ -119,7 +124,7 @@ size= 3
 ra_gal4 = 	122.390684521
 dec_gal4 = 36.9852665635
 
-name ='MERGER1'
+name ='MERGER2'
 surveys_ints = ['SDSS_r','SDSS_g','SDSS_i','SDSS_u','SDSS_z','GALEX_FUV','GALEX_NUV','unWISE_W1',
                 'unWISE_W2','unWISE_W3']
 
@@ -127,5 +132,5 @@ version = {
     'GALEX': 'DIS',
 }
 
-ph = PHOTsfh(name,ra,dec,size,surveys_ints,'unWISE_W3',path='/home/polo/Escritorio/Works/PHOTSFH_PRUEBAS',version=version)
+ph = PHOTsfh(name,ra_gal3,dec_gal3,size,surveys_ints,'unWISE_W3',path='/home/polo/Escritorio/Works/PHOTSFH_PRUEBAS',version=version)
 ph.processing_img()

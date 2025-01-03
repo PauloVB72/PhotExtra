@@ -201,8 +201,6 @@ class OBJECTS_IMG:
                             objects["theta"][obj_cat],
                             r=r,
                         )
-        plt.imshow(mask,vmin=np.mean(mask)-np.std(mask),vmax=np.mean(mask)+np.std(mask),origin='lower')
-        plt.show()
         return mask
 
         
@@ -215,15 +213,26 @@ class OBJECTS_IMG:
             bkg_estimator = MedianBackground()
             bkg = Background2D(self.hdu[0].data, (50, 50), filter_size=(3, 3),sigma_clip=sigma_clip, bkg_estimator=bkg_estimator)
             data_mk = np.copy(self.hdu[0].data)
-            data_mk[mask] = bkg.background_rms_median
+            background_mean = bkg.background_median
+            background_rms = bkg.background_rms_median
+            simulated_background = np.random.normal(loc=background_mean, scale=background_rms, size=self.hdu[0].data.shape)
+            data_mk[mask] = simulated_background[mask]
+
+            #data_mk[mask] = 0
+
         else:
             
             wcs = WCS(self.hdu[0].header)
             data = self.hdu[0].data.byteswap().newbyteorder()
             bkg = sep.Background(data)
             data_mk = np.copy(self.hdu[0].data)
-            data_mk[mask] = bkg.globalrms
-            
+            background_mean = bkg.back()  # Fondo medio
+            background_rms = bkg.rms()  # RMS del fondo
+            background_rms = np.maximum(background_rms, 0)
+            simulated_background = np.random.normal(loc=background_mean, scale=background_rms, size=self.hdu[0].data.shape)
+            data_mk[mask] = simulated_background[mask]
+            #data_mk[mask] = 0
+
         return data_mk
 
 
