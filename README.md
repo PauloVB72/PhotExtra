@@ -1,5 +1,5 @@
 <p align="center">
-	<img src="phtoextra.jpg" alt="drawing" width="300"/>
+	<img src="phtoextra.png" alt="drawing" width="300"/>
 </p>
 
 
