@@ -1,6 +1,3 @@
-# SFHmergers
-A code implementation for have SFH in galaxy merger using photmetry
+# PhotExtra 
+A code implementation for have sed fluxes using photometry in different data surveys. The code have implemented the following data surveys:
 'PS1','SDSS','GALEX','2MASS','WISE','unWISE','LegacySurvey','VISTA','SPLUS','UKIDSS'
-discarted surveys: DES, Spitzer, HST ....
-
-Issue with GALEX IMAGES, version
