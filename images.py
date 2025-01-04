@@ -1,3 +1,4 @@
+# Part of this image.py is based on https://github.com/temuller/hostphot
 import os
 from pathlib import Path
 import logging
