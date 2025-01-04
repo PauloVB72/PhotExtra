@@ -2,8 +2,7 @@
 	<img src="photextra.png" alt="drawing" width="300"/>
 </p>
 
-A code implementation for have sed fluxes using photometry in different data surveys. 
-
+A code to implement photometry in different data surveys, eliminating all kinds of stellar artifacts. Its main use is for SED fitting codes.
 
 Surveys implemented:
 
