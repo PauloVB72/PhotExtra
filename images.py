@@ -327,7 +327,7 @@ class GetSurveys():
             if hdu is None:
                 print('No image in this filter')
                 continue  # no image in this filter
-            print(filt)
+            
             # trim data to requested size
             img_wcs = wcs.WCS(hdu[0].header)
             pos = SkyCoord(ra=ra * u.degree, dec=dec * u.degree)

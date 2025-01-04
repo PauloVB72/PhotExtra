@@ -162,7 +162,7 @@ def dowload_kernel(name:str,path:str):
     #print(f"Descargando {file_name}...")
     response = requests.get(file_url, stream=True)
     response.raise_for_status()
-    print(response.iter_content(chunk_size=8192))
+    #print(response.iter_content(chunk_size=8192))
     with open(file_name, 'wb') as f:
         for chunk in response.iter_content(chunk_size=8192):
             f.write(chunk)
@@ -273,7 +273,7 @@ def setup_directories(name,path=None):
         # Verificar si existe 'images' en el path dado
         images_path = os.path.join(path+'/'+name, 'images')
         if not os.path.exists(images_path):
-            print('NO EXISTE')
+            print('Doesnt exist')
             directory(images_path)
         
         # Verificar si existe 'kernels' en el path dado

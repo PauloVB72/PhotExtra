@@ -35,7 +35,7 @@ class ConvolutionIMG:
             print(f"Kernel already exists: {filename}")
             return filename
         filename = dowload_kernel(kernel_name, obj_dir_ker)
-        print(filename)
+
         print(f"Kernels dowloaded")
         return filename
 
@@ -43,26 +43,26 @@ class ConvolutionIMG:
     def get_convolve(self):
         
         obj_dir = self.get_kernels()
-        print('--------------------------------')
-        print(obj_dir)
 
         if self.hdul is not None:
             hdu_inp = self.hdul
-            data_inp = hdu_inp[0].data
-            header_inp = hdu_inp[0].header
+            data_inp = hdu_inp.data
+            header_inp = hdu_inp.header
             wcs_inp = WCS(header_inp)
             
         else:
             path_inp = self.path+'/'+str(self.name)+'/images/'+str(self.inp_surveys)+'.fits'
             hdu_inp = fits.open(path_inp)
-            data_inp = hdu_inp[0].data
-            header_inp = hdu_inp[0].header
+            hdu_inp = hdu_inp[0]
+            data_inp = hdu_inp.data
+            header_inp = hdu_inp.header
             wcs_inp = WCS(header_inp)
 
         path_ker = str(obj_dir)
         hdu_ker = fits.open(path_ker)
-        data_ker = hdu_ker[0].data
-        header_ker = hdu_ker[0].header
+        hdu_ker = hdu_ker[0]
+        data_ker = hdu_ker.data
+        header_ker = hdu_ker.header
 
         self.ker_survey = self.ker_survey.split('_')[0]
         self.inp_surveys = self.inp_surveys.split('_')[0]

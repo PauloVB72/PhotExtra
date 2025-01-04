@@ -148,8 +148,8 @@ class OBJECTS_IMG:
     @staticmethod
     def sep_aperture(hdu, deblend_cont = 0.005 ,threshold= 5 ):
         
-        wcs = WCS(hdu[0].header)
-        data = hdu[0].data.byteswap().newbyteorder()
+        wcs = WCS(hdu.header)
+        data = hdu.data.byteswap().newbyteorder()
         bkg = sep.Background(data)
         objects = sep.extract(data, threshold, err=bkg.globalrms, deblend_cont=deblend_cont)
         
@@ -159,19 +159,19 @@ class OBJECTS_IMG:
         # Accede directamente a self.objects_search
         
         objetos_img = self.objects_search()
-        wcs = WCS(self.hdu[0].header)
+        wcs = WCS(self.hdu.header)
         estrella = []
         for k in objetos_img[0]:
             obj_x, obj_y = wcs.wcs_world2pix(k[0], k[1], 1)
             estrella.append((int(obj_x),int(obj_y)))
         estrella_x ,estrella_y= zip(*estrella)
 
-        mask = np.zeros_like(self.hdu[0].data, dtype=bool)
+        mask = np.zeros_like(self.hdu.data, dtype=bool)
         
 
         if survey in self.surveys_highresol:
             for i in range(len(estrella)):
-                spike_mask = OBJECTS_IMG.find_and_mask_spikes(self.hdu[0].data, (estrella_x[i], estrella_y[i]),spike_threshold,gradient_threshold)
+                spike_mask = OBJECTS_IMG.find_and_mask_spikes(self.hdu.data, (estrella_x[i], estrella_y[i]),spike_threshold,gradient_threshold)
                 mask |= spike_mask
                 
             mask = remove_small_objects(mask, min_size=20)
@@ -187,7 +187,7 @@ class OBJECTS_IMG:
                 star_coord = SkyCoord(ra_star, dec_star, unit="deg")
                 
                 separations = star_coord.separation(objs_coord)
-                print(separations.arcsecond )
+                
                 objs_filters = objs_coord[np.where(separations.arcsecond < 10)]
                 if objs_filters :
                     obj_cat.append(np.where(separations.arcsecond < 10)[0][0])
@@ -206,30 +206,30 @@ class OBJECTS_IMG:
         
     def masked(self):
         
-        mask = self.create_star_mask(self.hdu[0].data,survey = self.survey, sep_threshold = self.sep_threshold, r = self.r, sep_deblend = self.sep_deblend,
+        mask = self.create_star_mask(self.hdu.data,survey = self.survey, sep_threshold = self.sep_threshold, r = self.r, sep_deblend = self.sep_deblend,
                                      spike_threshold=self.spike_threshold, gradient_threshold=self.gradient_threshold)
         if self.survey in self.surveys_highresol:
             sigma_clip = SigmaClip(sigma=3.0)
             bkg_estimator = MedianBackground()
-            bkg = Background2D(self.hdu[0].data, (50, 50), filter_size=(3, 3),sigma_clip=sigma_clip, bkg_estimator=bkg_estimator)
-            data_mk = np.copy(self.hdu[0].data)
+            bkg = Background2D(self.hdu.data, (50, 50), filter_size=(3, 3),sigma_clip=sigma_clip, bkg_estimator=bkg_estimator)
+            data_mk = np.copy(self.hdu.data)
             background_mean = bkg.background_median
             background_rms = bkg.background_rms_median
-            simulated_background = np.random.normal(loc=background_mean, scale=background_rms, size=self.hdu[0].data.shape)
+            simulated_background = np.random.normal(loc=background_mean, scale=background_rms, size=self.hdu.data.shape)
             data_mk[mask] = simulated_background[mask]
 
             #data_mk[mask] = 0
 
         else:
             
-            wcs = WCS(self.hdu[0].header)
-            data = self.hdu[0].data.byteswap().newbyteorder()
+            wcs = WCS(self.hdu.header)
+            data = self.hdu.data.byteswap().newbyteorder()
             bkg = sep.Background(data)
-            data_mk = np.copy(self.hdu[0].data)
+            data_mk = np.copy(self.hdu.data)
             background_mean = bkg.back()  # Fondo medio
             background_rms = bkg.rms()  # RMS del fondo
             background_rms = np.maximum(background_rms, 0)
-            simulated_background = np.random.normal(loc=background_mean, scale=background_rms, size=self.hdu[0].data.shape)
+            simulated_background = np.random.normal(loc=background_mean, scale=background_rms, size=self.hdu.data.shape)
             data_mk[mask] = simulated_background[mask]
             #data_mk[mask] = 0
 
@@ -241,8 +241,8 @@ class OBJECTS_IMG:
         tab_gal = OBJECTS_IMG.gal_detected(self.ra,self.dec,size = self.size)
         tab_tycho, tab_gaia = OBJECTS_IMG.query_stars(self.ra,self.dec,radius = self.size)
 
-        header = self.hdu[0].header
-        data = self.hdu[0].data
+        header = self.hdu.header
+        data = self.hdu.data
         wcs = WCS(header)
         coord_pxtoworld = wcs.pixel_to_world([0,data.shape[0]], [0,data.shape[1]])
         xymin = coord_pxtoworld[0]
@@ -300,5 +300,5 @@ class ObjectsIMG(OBJECTS_IMG):
     
     def masked(self):
         newdata = super().masked()
-        self.hdu[0].data = newdata
+        self.hdu.data = newdata
         return self.hdu
