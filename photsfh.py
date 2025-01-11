@@ -9,6 +9,8 @@ from maskstars import  ObjectsIMG
 import matplotlib.pyplot as plt
 from ploting import Plotting
 from astropy.wcs import WCS
+
+
 class PHOTsfh:
 
     def __init__(self ,name ,ra ,dec ,size , survey_filter,survey_ref, version=None, path=None, mask_stars = True, table = False, plot = True,
@@ -49,6 +51,9 @@ class PHOTsfh:
         print(f"Images downloaded for {self.name}")
         survey_images = {srv: [] for srv in self.survey_filter}
         surv_reference = []
+
+
+        
         for srv_inp in self.survey_filter:
             if srv_inp != self.survey_ref:
                 srv_org = srv_inp.split('_')[0]
@@ -113,10 +118,10 @@ class PHOTsfh:
             data_surveys = []
             for j in self.survey_filter:
                 if j.split('_')[0] == srv_inp:
-                    hdu_fits = fits.open(path_inp+'/'+self.name+'/images/'+j+'.fits')
-                    data_surveys.append(hdu_fits[0].data)
-
-            hdu = fits.ImageHDU(data=np.array(data_surveys), name=f'SURVEY_{srv_inp}',header=hdu_fits[0].header)
+                    hdu_fits = fits.open(path_inp+'/'+self.name+'/images/'+j+'.fits')[0]
+                    data_surveys.append(hdu_fits.data)
+      
+            hdu = fits.ImageHDU(data=data_surveys, name=f'SURVEY_{srv_inp}',header=hdu_fits.header)
             hdu.header['SURVEY'] = srv_inp
             hdu.header['NIMAGES'] = len(data_surveys) 
             hdus.append(hdu)
@@ -133,6 +138,7 @@ class PHOTsfh:
 
         output_file = os.path.join(self.path+'/'+self.name, 'data_cube.fits')
         fits.HDUList(hdus).writeto(output_file, overwrite=True)
+
         if self.plot:
             hdu = fits.open(output_file)
             data_cube = hdu[-1].data
@@ -176,7 +182,13 @@ size= 3
 ra_gal4 = 	122.390684521
 dec_gal4 = 36.9852665635
 
-name ='MERGER1'
+
+ra_m1,dec_m1 = 141.414344,	32.803871
+
+
+ra_m3,dec_m3 = 166.837,	18.4329
+
+name ='m3'
 surveys_ints = ['SDSS_r','SDSS_g','SDSS_i','SDSS_u','SDSS_z','GALEX_FUV','GALEX_NUV','unWISE_W1',
                 'unWISE_W2','unWISE_W3']
 
@@ -184,5 +196,5 @@ version = {
     'GALEX': 'DIS',
 }
 
-ph = PHOTsfh(name,ra,dec,size,surveys_ints,'unWISE_W3',path='/home/polo/Escritorio/Works/PHOTSFH_PRUEBAS',version=version)
+ph = PHOTsfh(name,ra_m3,dec_m3,size,surveys_ints,'unWISE_W3',path='/home/polo/Escritorio/Works/PHOTSFH_PRUEBAS',version=version)
 ph.processing_img()

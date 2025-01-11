@@ -50,7 +50,7 @@ class OBJECTS_IMG:
         self.r = r 
         self.sep_deblend = sep_deblend
         self.surveys_highresol = ['SDSS', 'LegacySurvey','SPLUS','PS1']
-        
+        3
     @staticmethod
     def query_stars(ra, dec, radius=3):
         """
@@ -302,3 +302,6 @@ class ObjectsIMG(OBJECTS_IMG):
         newdata = super().masked()
         self.hdu.data = newdata
         return self.hdu
+
+
+
