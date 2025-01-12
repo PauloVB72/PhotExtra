@@ -14,21 +14,21 @@ import sep
 from astropy.wcs import WCS
 import logging
 
-def arcsec_to_deg(segundos):
+def arcsec_to_deg(sec):
 
-  minutos = segundos / 60
-  grados = minutos / 60
-  return grados
+  mint = sec / 60
+  degree = mint / 60
+  return degree
     
 def arcmin_to_deg(arcmin):
 
-  grados = arcmin / 60
-  return grados
+  degree = arcmin / 60
+  return degree
     
-def deg_to_arcmin(grados):
+def deg_to_arcmin(degree):
 
-  minutos_arco = grados * 60
-  return minutos_arco
+  arcmin = degree * 60
+  return arcmin
 
 
 

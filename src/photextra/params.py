@@ -27,7 +27,6 @@ class parameters:
         if isinstance(data[0],str):
             surveys = {}
             for items in data:
-                
                 surv, band = items.split('_')
                 if surv not in surveys:
                     surveys[surv] = []
@@ -35,23 +34,17 @@ class parameters:
                 surveys[surv].append(band)
             self.surveys = surveys
             list_bands = list(surveys.values())
-
         else:
-            
             warnings
         # position 
         if isinstance(position[0],(int,float)):
             pass
         else:
-            
             warnings
-        # size 
-
-        if size >= 5.:
-                
+        # size
+        if size >= 5.:    
                 warnings
         else:
-            
             warnings
     def survey_values(self):
 

@@ -2,8 +2,6 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from astropy.io import fits
-
-from .utils import directory,setup_directories
 from .images import GetImages
 from .convolution import ConvolutionIMG
 from .resampling import ReprojectIMG
