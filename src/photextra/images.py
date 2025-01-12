@@ -31,25 +31,25 @@ from astroquery.sdss import SDSS
 from astroquery.ukidss import Ukidss
 from astroquery.skyview import SkyView  # other surveys
 from astroquery.mast import Observations  # for GALEX
-
 from astroquery.esa.hubble import ESAHubble  # HST
+import warnings
+from astropy.utils.exceptions import AstropyWarning
 
 esahubble = ESAHubble()
 
 from reproject import reproject_interp
-from params import parameters
-from utils import folder_exists,directory,setup_directories
-from utils import survey_pixel_scale
-from utils import check_filters
-from utils import bkg_sub
-from utils import header_changes
+
+from .params import parameters
+from .utils import folder_exists,directory,setup_directories
+from .utils import survey_pixel_scale
+from .utils import check_filters
+from .utils import bkg_sub
+from .utils import header_changes
 
 
 #repository_path = Path(Photsfh.__path__[0])
 
 
-import warnings
-from astropy.utils.exceptions import AstropyWarning
 
 # 
 
@@ -883,18 +883,18 @@ class GetSurveys():
 
 
 
-ra = 351.2577 
-dec = -0.00041
-ra_gal2 = 20.0108974646	
-dec_gal2 = 14.3617675139
+#ra = 351.2577 
+#dec = -0.00041
+#ra_gal2 = 20.0108974646	
+#dec_gal2 = 14.3617675139
 
-ra_gal3=123.30674	
-dec_gal3 = 24.60798
-size= 3
-name ='SIT45'
-surveys_ints = ['LegacySurvey_r']
-gs = GetImages(name,ra,dec,size,surveys_ints)
+#ra_gal3=123.30674	
+#dec_gal3 = 24.60798
+#size= 3
+#name ='SIT45'
+#surveys_ints = ['SDSS_r']
+#gs = GetImages(name,ra,dec,size,surveys_ints)
 
 
-gs.download()
+#gs.download()
 

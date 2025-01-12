@@ -1,19 +1,22 @@
-import numpy as np
-import pandas as pd
-from astropy import units as u
 import os
 import ast
 import requests
+import numpy as np
+import pandas as pd
+
+from astropy import units as u
+from astropy.io import fits
+from astropy.wcs import WCS
 from astropy.stats import SigmaClip
 from photutils.background import Background2D, MedianBackground
 
 import json
-from astropy.io import fits
-from astropy.wcs import WCS
-
 import sep
 
-path = '/home/polo/Escritorio/Works/Doctorado/Code/SFHmergers/Photsfh/prm_config.csv'
+#path = '/home/polo/Escritorio/Works/Doctorado/Code/SFHmergers/Photsfh/prm_config.csv'
+
+current_dir = os.path.dirname(__file__)
+path = os.path.join(current_dir, 'prm_config.csv')
 
 def load_data(csv_file):
     df = pd.read_csv(csv_file)
@@ -150,23 +153,41 @@ def check_filters(survey, filters):
 
 
 
-def dowload_kernel(name:str,path:str):
+#def dowload_kernel(name:str,path:str):
 
-    hi_res = "https://www.astro.princeton.edu/~draine/Kernels/Kernels_2018/Kernel_FITS_Files/Hi_Resolution/"
+ #   hi_res = "https://www.astro.princeton.edu/~draine/Kernels/Kernels_2018/Kernel_FITS_Files/Hi_Resolution/"
 
-    file_url = hi_res + name    #"Kernel_HiRes_BiGauss_00.5_to_GALEX_FUV.fits.gz"
+  #  file_url = hi_res + name    #"Kernel_HiRes_BiGauss_00.5_to_GALEX_FUV.fits.gz"
 
-    output_folder = path
+   # output_folder = path
 
-    file_name = os.path.join(output_folder, file_url.split("/")[-1])
+   # file_name = os.path.join(output_folder, file_url.split("/")[-1])
     #print(f"Descargando {file_name}...")
+   # response = requests.get(file_url, stream=True)
+   # response.raise_for_status()
+    #print(response.iter_content(chunk_size=8192))
+   # with open(file_name, 'wb') as f:
+   #     for chunk in response.iter_content(chunk_size=8192):
+    #        f.write(chunk)
+   # return file_name
+
+
+def download_kernel(name:str,path:str,base='high_res'):
+    if base == 'high_res':
+        url = "https://www.astro.princeton.edu/~draine/Kernels/Kernels_2018/Kernel_FITS_Files/Hi_Resolution/"
+    elif base == 'low_res':
+        url = "https://www.astro.princeton.edu/~draine/Kernels/Kernels_2018/Kernel_FITS_Files/Low_Resolution/"
+    else:
+        raise ValueError("Invalid base value. Must be 'high_res' or 'low_res'.")
+    file_url = url + name
+
     response = requests.get(file_url, stream=True)
     response.raise_for_status()
-    #print(response.iter_content(chunk_size=8192))
-    with open(file_name, 'wb') as f:
+
+    with open(os.path.join(path, file_url.split("/")[-1]), 'wb') as f:
         for chunk in response.iter_content(chunk_size=8192):
             f.write(chunk)
-    return file_name
+    return os.path.join(path, file_url.split("/")[-1])
 
 
 def bkg_sub(data:np.array,survey:str):

@@ -1,40 +1,44 @@
 from reproject import reproject_adaptive,reproject_exact,reproject_interp
-from utils import dowload_kernel,setup_directories
-from utils import get_data
-from utils import directory
-from utils import folder_exists
-from utils import survey_pixel_scale ,survey_resolution
-from params import parameters
 from astropy.io import fits
-from astropy.convolution import Gaussian2DKernel, convolve,convolve_fft
 from astropy.wcs import WCS
 
+from .utils import setup_directories
+
+import logging
 
 class ReprojectIMG:
-    def __init__(self,survey:int,ref_survey:str,name:str,path=None,data=None):
+    def __init__(self,survey:int,ref_survey:str,name:str,path=None,data=None,method='exact'):
+        """
+        Initialize the ReprojectIMG class.
 
+        Parameters:
+        survey (int): The survey to reproject.
+        ref_survey (str): The reference survey.
+        name (str): The name of the object.
+        path (str): The path to the data. Defaults to None.
+        data (fits.HDUList): The data to reproject. Defaults to None.
+        method (str): The resampling method to use. Defaults to 'exact'.
+        """
         self.inp_surveys = survey
         self.ref_survey = ref_survey
         self.path = path
         self.name = name
         self.data = data
+        self.method = method
 
-    def get_reproject(self):
+    def get_reproject(self,**kwargs):
 
         if self.data is not None:
                 hdu_inp = self.data
-                data_inp = self.data[0]
+
         else:
                 obj_dir = setup_directories(self.name,path=self.path)['images']
                 path_inp = obj_dir+'/'+str(self.inp_surveys)+'.fits'
                 hdu_inp = fits.open(path_inp)
-                data_inp = hdu_inp[0].data
-                header_inp = hdu_inp[0].header
 
         obj_dir = setup_directories(self.name,path=self.path)['images']
         path_ref = obj_dir+'/'+str(self.ref_survey)+'.fits'
         hdu_ref = fits.open(path_ref)
-        data_ref = hdu_ref[0].data
         header_ref = hdu_ref[0].header
         wcs_ref = WCS(header_ref)
 
@@ -43,14 +47,18 @@ class ReprojectIMG:
 
        # pxs_ker = float(survey_pixel_scale(self.ref_survey))
        # pxs_inp = float(survey_pixel_scale(self.inp_surveys))
-
-        reprojection_data , footprint = reproject_exact(hdu_inp,wcs_ref)
-
-        import matplotlib.pyplot as plt
-        import numpy as np
-
+        if self.method == 'adaptive':
+            reprojection_data, _ = reproject_adaptive(hdu_inp, wcs_ref,**kwargs)
+        elif self.method == 'exact':
+            reprojection_data, _ = reproject_exact(hdu_inp, wcs_ref,**kwargs)
+        elif self.method == 'interp':
+            reprojection_data, _ = reproject_interp(hdu_inp, wcs_ref,**kwargs)
+        else:
+            logging.error("Invalid resampling method. Please choose from 'adaptive', 'exact', or 'interp'.")
+            return None
 
         return reprojection_data
+
 
 
 

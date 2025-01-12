@@ -1,13 +1,14 @@
 import os
 import numpy as np
-from astropy.io import fits
-from utils import directory,setup_directories
-from images import GetImages
-from convolution import ConvolutionIMG
-from resampling import ReprojectIMG
-from maskstars import  ObjectsIMG
 import matplotlib.pyplot as plt
-from ploting import Plotting
+from astropy.io import fits
+
+from .utils import directory,setup_directories
+from .images import GetImages
+from .convolution import ConvolutionIMG
+from .resampling import ReprojectIMG
+from .maskstars import  ObjectsIMG
+from .ploting import Plotting
 from astropy.wcs import WCS
 
 

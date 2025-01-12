@@ -1,43 +1,37 @@
 import os
-import requests
-from utils import dowload_kernel,setup_directories
-from utils import get_data
-from utils import directory
-from utils import folder_exists
-from utils import survey_pixel_scale ,survey_resolution,pxscale
+from .utils import download_kernel,setup_directories
+from .utils import get_data
+from .utils import pxscale
 
-from params import parameters
 from astropy.io import fits
 from astropy.convolution import Gaussian2DKernel, convolve,convolve_fft
-from astropy.wcs import WCS
-
 from scipy.ndimage import zoom
 
 class ConvolutionIMG:
-    def __init__(self,survey:int,ker_survey:str,name:str,path=None,hdul=None):
+    def __init__(self,survey:int,ker_survey:str,name:str,path=None,hdul=None,base='high_res'):
 
         self.inp_surveys = survey
         self.ker_survey = ker_survey
         self.path = path
         self.name = name
         self.hdul = hdul
+        self.base = base
         
     def get_kernels(self):
         
         obj_dir = setup_directories(self.name,path=self.path)['main']
         obj_dir_ker = setup_directories(self.name,path=self.path)['kernels']
-
-
         kernel_name = get_data(self.inp_surveys, self.ker_survey)
         filename = os.path.join(obj_dir, kernel_name)
 
         if os.path.isfile(filename):
             print(f"Kernel already exists: {filename}")
             return filename
-        filename = dowload_kernel(kernel_name, obj_dir_ker)
+        else:
+            filename = download_kernel(kernel_name, obj_dir_ker,base=self.base)
 
-        print(f"Kernels dowloaded")
-        return filename
+            print(f"Kernels dowloaded")
+            return filename
 
 
     def get_convolve(self):
@@ -48,7 +42,7 @@ class ConvolutionIMG:
             hdu_inp = self.hdul
             data_inp = hdu_inp.data
             header_inp = hdu_inp.header
-            wcs_inp = WCS(header_inp)
+            #wcs_inp = WCS(header_inp)
             
         else:
             path_inp = self.path+'/'+str(self.name)+'/images/'+str(self.inp_surveys)+'.fits'
@@ -56,7 +50,7 @@ class ConvolutionIMG:
             hdu_inp = hdu_inp[0]
             data_inp = hdu_inp.data
             header_inp = hdu_inp.header
-            wcs_inp = WCS(header_inp)
+            #wcs_inp = WCS(header_inp)
 
         path_ker = str(obj_dir)
         hdu_ker = fits.open(path_ker)
@@ -82,21 +76,7 @@ class ConvolutionIMG:
         newkernel = zoom(data_ker, ratio) / ratio**2
 
         astropy_conv = convolve_fft(data_inp, newkernel, nan_treatment = 'interpolate', normalize_kernel=True, preserve_nan=True)
-        
-        #import matplotlib.pyplot as plt
-       # import numpy as np
 
-       # fig, axs = plt.subplots(1, 3, figsize=(15, 5))
-
-        #axs[0].imshow(data_inp, cmap='gray', origin='lower',vmin=np.nanmean(data_inp)-np.nanstd(data_inp),vmax=np.nanmean(data_inp)+np.nanstd(data_inp),
-         #       interpolation='nearest')
-
-       # axs[1].imshow(data_ker, cmap='gray', origin='lower',vmin=np.nanmean(data_ker)-np.nanstd(data_ker),vmax=np.nanmean(data_ker)+np.nanstd(data_ker),
-        #        interpolation='nearest')
-       # axs[2].imshow(astropy_conv, cmap='gray', origin='lower',vmin=np.nanmean(astropy_conv)-np.nanstd(astropy_conv),vmax=np.nanmean(astropy_conv)+np.nanstd(astropy_conv),
-        #        interpolation='nearest')      
-       # plt.title(self.inp_surveys) 
-       # plt.show() 
         return astropy_conv
     
 
