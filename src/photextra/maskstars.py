@@ -7,13 +7,12 @@ Vizier.ROW_LIMIT = -1
 import numpy as np
 import matplotlib.pyplot as plt
 from skimage.filters import threshold_otsu
-from scipy.ndimage import label, generate_binary_structure, gaussian_filter
 from skimage.morphology import remove_small_objects, disk, binary_dilation
 from astropy.stats import SigmaClip
 from photutils.background import Background2D, MedianBackground
 import sep
 from astropy.wcs import WCS
-
+import logging
 
 def arcsec_to_deg(segundos):
 
@@ -37,7 +36,21 @@ def deg_to_arcmin(grados):
 class OBJECTS_IMG:
     def __init__(self, hdu, ra, dec, size, spike_threshold = 0.3, gradient_threshold = 0.05,
                 survey = 'SDSS', sep_threshold = 5, sep_deblend = 0.005, r = 3.8):
-        
+        """
+        Initialize the OBJECTS_IMG class.
+
+        Parameters:
+        hdu (fits.HDUList): The input image.
+        ra (float): The right ascension of the object.
+        dec (float): The declination of the object.
+        size (float): The size of the image.
+        spike_threshold (float): The threshold for spike detection. Defaults to 0.3.
+        gradient_threshold (float): The threshold for gradient detection. Defaults to 0.05.
+        survey (str): The survey name. Defaults to 'SDSS'.
+        sep_threshold (float): The threshold for SEP detection. Defaults to 5.
+        sep_deblend (float): The deblending threshold for SEP. Defaults to 0.005.
+        r (float): The radius for SEP detection. Defaults to 3.8.
+        """
         self.hdu = hdu
         self.ra = ra
         self.dec = dec
@@ -54,12 +67,15 @@ class OBJECTS_IMG:
     @staticmethod
     def query_stars(ra, dec, radius=3):
         """
-        Consulta estrellas de los catálogos Tycho-2 y Gaia en un área específica del cielo.
-    
-        :param ra: Ascensión recta del centro (en grados).
-        :param dec: Declinación del centro (en grados).
-        :param radius: Radio de búsqueda (astropy.units, por defecto 3 arcmin).
-        :return: Dos tablas de astropy Table con los resultados de Tycho-2 y Gaia.
+        Query stars from the Tycho-2 and Gaia catalogs.
+
+        Parameters:
+        ra (float): The right ascension of the object.
+        dec (float): The declination of the object.
+        radius (float): The radius for the query. Defaults to 3.
+
+        Returns:
+        tuple: A tuple containing the Tycho-2 and Gaia catalogs.
         """
         radius = arcmin_to_deg(radius)*u.deg
         # Coordenadas del centro
@@ -147,7 +163,17 @@ class OBJECTS_IMG:
 
     @staticmethod
     def sep_aperture(hdu, deblend_cont = 0.005 ,threshold= 5 ):
-        
+        """
+        Perform SEP aperture photometry.
+
+        Parameters:
+        hdu (fits.HDUList): The input image.
+        deblend_cont (float): The deblending threshold for SEP. Defaults to 0.005.
+        threshold (float): The threshold for SEP detection. Defaults to 5.
+
+        Returns:
+        np.ndarray: The SEP aperture photometry results.
+        """
         wcs = WCS(hdu.header)
         data = hdu.data.byteswap().newbyteorder()
         bkg = sep.Background(data)
@@ -156,8 +182,21 @@ class OBJECTS_IMG:
         return objects
 
     def create_star_mask(self, image, sep_threshold= 5, sep_deblend = 0.005 ,r = 3.8, spike_threshold=0.3, gradient_threshold=0.05, survey = 'SDSS'):
-        # Accede directamente a self.objects_search
-        
+        """
+        Create a mask for the stars in the image.
+
+        Parameters:
+        image (np.ndarray): The input image.
+        sep_threshold (float): The threshold for SEP detection. Defaults to 5.
+        sep_deblend (float): The deblending threshold for SEP. Defaults to 0.005.
+        r (float): The radius for SEP detection. Defaults to 3.8.
+        spike_threshold (float): The threshold for spike detection. Defaults to 0.3.
+        gradient_threshold (float): The threshold for gradient detection. Defaults to 0.05.
+        survey (str): The survey name. Defaults to 'SDSS'.
+
+        Returns:
+        np.ndarray: A binary mask indicating the positions of stars.
+        """
         objetos_img = self.objects_search()
         wcs = WCS(self.hdu.header)
         estrella = []
@@ -202,6 +241,16 @@ class OBJECTS_IMG:
                             r=r,
                         )
         return mask
+    def log_star_detection(self, stars):
+        """
+        Log the details of detected stars.
+
+        Parameters:
+        stars (list): List of detected stars.
+        """
+        logging.info(f"Detected {len(stars)} stars.")
+        for star in stars:
+            logging.info(f"Star at RA: {star['ra']}, DEC: {star['dec']}, Magnitude: {star['magnitude']}")
 
         
     def masked(self):

@@ -60,7 +60,19 @@ class GetImages():
         'WISE': ['allwise', 'neo1', 'neo2', 'neo3', 'neo4', 'neo5', 'neo6', 'neo7'],
     }
     def __init__(self, name, ra,dec, size, surveys_init,versions = None, path = None, bkg_subtraction = True):
+        """
+        Initialize the GetImages class.
 
+        Parameters:
+        name (str): The name of the object.
+        ra (float): The right ascension of the object.
+        dec (float): The declination of the object.
+        size (float): The size of the image.
+        surveys_init (list): The list of surveys to download.
+        versions (dict): The dictionary of versions for each survey. Defaults to None.
+        path (str): The path to the data. Defaults to None.
+        bkg_subtraction (bool): Whether to perform background subtraction. Defaults to True.
+        """
         self.name = name
         self.position = (ra,dec)
         self.size = size
@@ -68,17 +80,24 @@ class GetImages():
         self.path = path
         self.bkg_subtraction = bkg_subtraction
         self.surveys = self.initialize_surveys(surveys_init, self.position, size)
+
+
     def initialize_surveys(self, surveys_init, position, size):
         try:
             parameters(surveys_init, position, size).check_validity()
             return parameters(surveys_init, position, size).survey_values()
         except Exception as e:
-            warnings.warn(f'ERROR: {e}')
+            warnings.warn(f'Error: {e}')
             return {}
 
 
     def download(self):
+        """
+        Download the images.
 
+        Returns:
+        str: The message indicating whether the download was successful.
+        """
         gs = GetSurveys()
         for srv, filters in self.surveys.items():
             try:
@@ -91,24 +110,36 @@ class GetImages():
                             gs.dowload_img(self.name, self.position[0], self.position[1], self.size, survey=srv, filters=filters, version=None, path=self.path)
 
             except Exception as e:
-                warnings.warn(f'ERRORes: {e}')
-                return {}
+                warnings.warn(f'Error: {e}')
+                return "Download failed"
         return "Download completed in folder."
     
 
 class GetSurveys():
     def __init__(self,versions = None,bkg_subtraction = True):
+        """
+        Initialize the GetSurveys class.
+
+        Parameters:
+        versions (dict): The dictionary of versions for each survey. Defaults to None.
+        bkg_subtraction (bool): Whether to perform background subtraction. Defaults to True.
+        """
         self.versions = versions
         self.bkg_subtraction = bkg_subtraction
 
     def getimg_PS1(self, ra ,dec, size =3, filters = None):
-
         """
-        
+        Download the PS1 images.
 
-                           PS1
-        
-        
+        Parameters:
+        ra (float): The right ascension of the object.
+        dec (float): The declination of the object.
+        size (float): The size of the image. Defaults to 3.
+        filters (list): The list of filters to download. Defaults to None.
+
+        Returns:
+        list: The list of HDU ```python
+        objects downloaded.
         """
        
         survey = "PS1"
@@ -155,9 +186,17 @@ class GetSurveys():
     def getimg_SDSS(self, ra ,dec, size =3, filters = None, version=None):
 
         """
-        
-                        SDSS
-        
+        Download the SDSS images.
+
+        Parameters:
+        ra (float): The right ascension of the object.
+        dec (float): The declination of the object.
+        size (float): The size of the image. Defaults to 3.
+        filters (list): The list of filters to download. Defaults to None.
+        version (str): The version of the PS1 data. Defaults to None.
+        Returns:
+        list: The list of HDU ```python
+        objects downloaded.
         """
         survey = "SDSS"
 
@@ -232,8 +271,20 @@ class GetSurveys():
         return hdul_list
 
     def getimg_GALEX(self, ra ,dec, size =3, filters = None, version=None):
+        """
+        Get GALEX images from the GALEX archive.
 
-
+        Parameters:
+        ra (float): Right ascension of the pointing in degrees.
+        dec (float): Declination of the pointing in degrees.
+        size (int): Size of the image in arcseconds.
+        filters (list): List of filters to download. Default is None, which means all filters.
+        version (str): Version of the GALEX data to download. Default is None, which
+        means the latest version.
+        Returns:
+        list: The list of HDU ```python
+        objects downloaded.
+        """
 
         survey = "GALEX"
 
@@ -257,8 +308,8 @@ class GetSurveys():
         obs_df_ = obs_table.to_pandas()
 
         if version is None:
-            # starts from the survey with the deepest images first
-            obs_df_ = obs_df_.sort_values("t_exptime", ascending=False)
+            # starts from the survey with the highest images first
+            obs_df_ = obs_df_.sort_values("t_exptime", ascending=True) # sort by exposure time, last modify: False
             projects = obs_df_.project.unique()
         else:
             # only use the survey requested by the user
@@ -423,6 +474,26 @@ class GetSurveys():
 
    
     def getimg_unWISE(self, ra ,dec, size =3, filters = None, version="allwise"):
+        """
+        Get unWISE images from the IRSA website.
+        Parameters
+        ----------
+        ra : float
+        Right ascension of the target in degrees.
+        dec : float
+        Declination of the target in degrees.
+        size : float
+        Size of the image in arcseconds.
+        filters : list
+        List of filters to retrieve. Default is None, which means all filters.
+        version : str
+        Version of the unWISE catalog. Default is "allwise".
+        Returns
+        -------
+        hdu_list : list
+
+        List of HDU objects downloaded.
+        """
 
         survey = "unWISE"
 
@@ -487,7 +558,20 @@ class GetSurveys():
 
 
     def getimg_2MASS(self, ra ,dec, size =3, filters = None):
+        """
+        Get 2MASS images from the GALEX archive.
 
+        Parameters:
+        ra (float): Right ascension of the pointing in degrees.
+        dec (float): Declination of the pointing in degrees.
+        size (int): Size of the image in arcseconds.
+        filters (list): List of filters to download. Default is None, which means all filters.
+
+        Returns:
+        list: The list of HDU ```python
+        objects downloaded.
+        """
+        
         survey = "2MASS"
 
         def retry_regsearch(max_retries=3, delay=5):
@@ -835,7 +919,19 @@ class GetSurveys():
         return hdu_list
     
     def dowload_img(self,name, ra ,dec,size =3, survey='SDSS',filters = None,version = None, path = None, overwrite=True):
-        
+        """
+        Download images from the specified survey.
+
+        Parameters:
+        name (str): The name of the object.
+        ra (float): The right ascension of the object.
+        dec (float): The declination of the object.
+        size (float): The size of the image.
+        survey (str): The survey to download from.
+        filters (list): The list of filters to apply.
+        version (str): The version of the survey. Defaults to None.
+        path (str): The path to save the images. Defaults to None.
+        """
         obj_dir = setup_directories(name,path=path)['main']
 
 
