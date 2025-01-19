@@ -80,14 +80,15 @@ class GetImages():
         self.path = path
         self.bkg_subtraction = bkg_subtraction
         self.surveys = self.initialize_surveys(surveys_init, self.position, size)
-
+        
 
     def initialize_surveys(self, surveys_init, position, size):
         try:
+           
             parameters(surveys_init, position, size).check_validity()
             return parameters(surveys_init, position, size).survey_values()
         except Exception as e:
-            warnings.warn(f'Error: {e}')
+            warnings.warn(f'Error in params: {e}')
             return {}
 
 
@@ -99,12 +100,13 @@ class GetImages():
         str: The message indicating whether the download was successful.
         """
         gs = GetSurveys()
+        
         for srv, filters in self.surveys.items():
             try:
                 if self.versions is not None:
                     for survey, ver in self.versions.items():
                         if survey == srv:
-
+                            
                             gs.dowload_img(self.name, self.position[0], self.position[1], self.size, survey=srv, filters=filters, version=ver, path=self.path)
                         else:
                             gs.dowload_img(self.name, self.position[0], self.position[1], self.size, survey=srv, filters=filters, version=None, path=self.path)
@@ -932,8 +934,8 @@ class GetSurveys():
         version (str): The version of the survey. Defaults to None.
         path (str): The path to save the images. Defaults to None.
         """
-        obj_dir = setup_directories(name,path=path)['main']
 
+        obj_dir = setup_directories(name,path=path)['main']
 
 
         if survey == 'PS1':

@@ -432,31 +432,31 @@ class PYFlux(conversion):
         self.data.to_csv(path,index=False)
         return "save file"
 
-def randomgalname(number, nmb_name):
+#def randomgalname(number, nmb_name):
 
-  count = 0
-  lst = list()
+ # count = 0
+ # lst = list()
 
-  while count < number:
+#  while count < number:
 
-    count = count + 1
-    c = string.ascii_letters
-    val = [''.join(random.choice(c) for x in range(nmb_name))]
-    kk = np.random.rand(1,26)[0].tolist()
+ #   count = count + 1
+  #  c = string.ascii_letters
+   # val = [''.join(random.choice(c) for x in range(nmb_name))]
+   # kk = np.random.rand(1,26)[0].tolist()
 
-    val.extend(kk)
-    lst.append(val)
+   # val.extend(kk)
+   # lst.append(val)
 
-  df = pd.DataFrame(lst,columns=['object','SDSS_u','SDSS_u_err','SDSS_g','SDSS_g_err','SDSS_r','SDSS_r_err','SDSS_i','SDSS_i_err',
-                                 'SDSS_z', 'SDSS_z_err','GALEX_FUV','GALEX_FUV_err','GALEX_NUV','GALEX_NUV_err','TWOMASS_J','TWOMASS_J_err',
-                                 'TWOMASS_H','TWOMASS_H_err','TWOMASS_K','TWOMASS_K_err','WISE_W1','WISE_W1_err','WISE_W2','WISE_W2_err','WISE_W3','WISE_W3_err'])
+ # df = pd.DataFrame(lst,columns=['object','SDSS_u','SDSS_u_err','SDSS_g','SDSS_g_err','SDSS_r','SDSS_r_err','SDSS_i','SDSS_i_err',
+ #                                'SDSS_z', 'SDSS_z_err','GALEX_FUV','GALEX_FUV_err','GALEX_NUV','GALEX_NUV_err','TWOMASS_J','TWOMASS_J_err',
+ #                                'TWOMASS_H','TWOMASS_H_err','TWOMASS_K','TWOMASS_K_err','WISE_W1','WISE_W1_err','WISE_W2','WISE_W2_err','WISE_W3','WISE_W3_err'])
 
-  return df
+ # return df
 
 
-txt_new = randomgalname(10,13)
+#txt_new = randomgalname(10,13)
 
-path = 'hola.txt'
+#path = 'hola.txt'
 
-PYFlux(txt_new,'F_w')
+#PYFlux(txt_new,'F_w')
 

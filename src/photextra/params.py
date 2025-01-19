@@ -8,7 +8,10 @@ import warnings
 from astropy.utils.exceptions import AstropyWarning
 
 
-config = pd.read_csv('/home/polo/Escritorio/Works/Doctorado/Code/SFHmergers/Photsfh/prm_config.csv')
+current_dir = os.path.join(os.path.dirname(__file__), '..', 'surveys')
+path = os.path.join(current_dir, 'prm_config.csv')
+config = pd.read_csv(path)
+
 
 def check_data():
     pass

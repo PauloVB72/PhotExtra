@@ -15,8 +15,10 @@ import sep
 
 #path = '/home/polo/Escritorio/Works/Doctorado/Code/SFHmergers/Photsfh/prm_config.csv'
 
-current_dir = os.path.dirname(__file__)
+current_dir = os.path.join(os.path.dirname(__file__), '..', 'surveys')
+
 path = os.path.join(current_dir, 'prm_config.csv')
+path_kernels_ = os.path.join(current_dir, 'kernel_survey.json')
 
 def load_data(csv_file):
     df = pd.read_csv(csv_file)
@@ -56,16 +58,26 @@ def folder_exists(folder_path):
     return os.path.isdir(folder_path)
 
 
-def directory(path:str)-> None:
+# def directory(path:str)-> None:
             
-    mdir = path
-    if isinstance(path,str):
-        try: 
-            os.mkdir(mdir)
-        except OSError:
-            print ("Creation of the directory %s failed" % mdir)
-        else:
-            print ("Successfully created the directory %s " % mdir)
+#     mdir = path
+#     if isinstance(path,str):
+#         try: 
+#             os.mkdir(mdir)
+#         except OSError:
+#             print ("Creation of the directory %s failed" % mdir)
+#         else:
+#             print ("Successfully created the directory %s " % mdir)
+
+
+def directory(path: str) -> None:
+    """Create a directory if it doesn't exist."""
+    try:
+        os.makedirs(path, exist_ok=True)
+        print(f"Successfully created the directory {path}")
+    except OSError as e:
+        print(f"Creation of the directory {path} failed: {e}")
+
 
 def filter_check(survey,filter_in=None):
     
@@ -253,10 +265,11 @@ def header_changes(hdu,ra:float,dec:float,size_img:list,survey=None):
 
 
 def get_data(inp_survey: str, ker_survey:str):
-    with open("/home/polo/Escritorio/Works/Doctorado/Code/SFHmergers/Photsfh/kernel_survey.json", "r") as f:
+
+    with open(path_kernels_ ,"r") as f:
         data = json.load(f)
 
-    # Buscar el valor específico para SDSS → WISE
+    # Buscar el valor específico para Survey1 -->  survey2
     for entry in data:
         if entry["From"] == inp_survey and entry["To"] == ker_survey:
             print(f"Valor SDSS→WISE: {entry['Value']}")
@@ -267,6 +280,7 @@ def get_data(inp_survey: str, ker_survey:str):
 
 def setup_directories(name,path=None):
     # Obtener el directorio de trabajo
+  
     workdir = os.getenv('workdir', name)
     
     # Inicializar los caminos para 'images' y 'kernels'
@@ -336,3 +350,4 @@ def pxscale(header):
                       return np.abs(pixelscale)
                   except ValueError:
                       pass
+                  

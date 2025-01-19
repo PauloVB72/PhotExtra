@@ -50,6 +50,6 @@ class Plotting:
         fig.colorbar(im2, ax=ax2)
         plt.savefig(self.path+'.pdf', bbox_inches='tight')
         
-        plt.show()
+        plt.close()
         
         return 

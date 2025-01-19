@@ -9,6 +9,7 @@ from .maskstars import  ObjectsIMG
 from .ploting import Plotting
 from astropy.wcs import WCS
 
+from .utils import setup_directories
 
 class PHOTsfh:
 
@@ -32,6 +33,13 @@ class PHOTsfh:
         self.sep_deblend = sep_deblend
         self.table = table
         self.plot = plot
+        
+        print('name:',self.name)
+        print('ra:',self.ra)
+        print('dec:',self.dec)
+        print('size:',self.size)
+        print('survey_filter:',self.survey_filter)
+        #setup_directories(name,path=path)
     def processing_img(self):
 
         data_cube = []
@@ -41,9 +49,13 @@ class PHOTsfh:
         print('...............................................................................................')
         print('...............................................................................................')
         print(f"Downloading images for {self.name}")
-        gs = GetImages(self.name, self.ra, self.dec, self.size, self.survey_filter,versions = self.version, path = self.path)
-        gs.download()
-
+        try:
+            gs = GetImages(self.name, self.ra, self.dec, self.size, self.survey_filter,versions = self.version, path = self.path)
+            gs.download()
+        except Exception as e:
+            print(f"Error downloading images: {e}")
+            return None
+        
         path_inp = self.path
         print('...............................................................................................')
         print('...............................................................................................')
@@ -168,32 +180,34 @@ class PHOTsfh:
         print(f"Data cube saved to {output_file}")
         return data_cube
 
-ra = 351.2577 
-dec = -0.00041
+# ra = 351.2577 
+# dec = -0.00041
 
-ra_gal2 = 20.0108974646	
-dec_gal2 = 14.3617675139
+# ra_gal2 = 20.0108974646	
+# dec_gal2 = 14.3617675139
 
-ra_gal3=123.30674	
-dec_gal3 = 24.60798
-size= 3
+# ra_gal3=123.30674	
+# dec_gal3 = 24.60798
+# size= 3
 
-ra_gal4 = 	122.390684521
-dec_gal4 = 36.9852665635
-
-
-ra_m1,dec_m1 = 141.414344,	32.803871
+# ra_gal4 = 	122.390684521
+# dec_gal4 = 36.9852665635
 
 
-ra_m3,dec_m3 = 166.837,	18.4329
+# ra_m1,dec_m1 = 141.414344,	32.803871
 
-name ='m3'
-surveys_ints = ['SDSS_r','SDSS_g','SDSS_i','SDSS_u','SDSS_z','GALEX_FUV','GALEX_NUV','unWISE_W1',
-                'unWISE_W2','unWISE_W3']
 
-version = {
-    'GALEX': 'DIS',
-}
+# ra_m3,dec_m3 = 166.837,	18.4329
 
-ph = PHOTsfh(name,ra_m3,dec_m3,size,surveys_ints,'unWISE_W3',path='/home/polo/Escritorio/Works/PHOTSFH_PRUEBAS',version=version)
-ph.processing_img()
+# name ='m3'
+# surveys_ints = ['SDSS_r','SDSS_g','SDSS_i','SDSS_u','SDSS_z','GALEX_FUV','GALEX_NUV','unWISE_W1',
+#                 'unWISE_W2','unWISE_W3']
+
+# version = {
+#     'GALEX': 'DIS',
+#     'SDSS': 'DR17',}
+# name: 'gal_55993'
+# ra: 138.870704
+# dec: 20.465138
+# ph = PHOTsfh(name,ra,dec,3,surveys_ints,'unWISE_W3',path='/home/polo/Escritorio/Works/PHOTSFH_PRUEBAS',version=version)
+# ph.processing_img()
