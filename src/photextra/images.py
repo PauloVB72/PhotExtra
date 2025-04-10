@@ -308,7 +308,7 @@ class GetSurveys():
             coordinates=coords, radius=size_arcsec, obs_collection=["GALEX"]
         )
         obs_df_ = obs_table.to_pandas()
-
+        print(obs_df_)
         if version is None:
             # starts from the survey with the highest images first
             obs_df_ = obs_df_.sort_values("t_exptime", ascending=True) # sort by exposure time, last modify: False

@@ -64,6 +64,7 @@ class PHOTsfh:
         surv_reference = []
 
 
+        # Convolution and resampling
         
         for srv_inp in self.survey_filter:
             if srv_inp != self.survey_ref:
@@ -72,6 +73,8 @@ class PHOTsfh:
                     print('...............................................................................................')
                     print('...............................................................................................')
                     print(f"Masking stars for {srv_inp}")
+
+                    
                     hdu= fits.open(path_inp+'/'+self.name+'/images/'+srv_inp+'.fits')[0]
                     masking = ObjectsIMG(hdu, self.ra, self.dec, self.size, spike_threshold = self.spike_threshold,
                                                   gradient_threshold = self.gradient_threshold, survey = srv_org,
@@ -130,8 +133,10 @@ class PHOTsfh:
             for j in self.survey_filter:
                 if j.split('_')[0] == srv_inp:
                     hdu_fits = fits.open(path_inp+'/'+self.name+'/images/'+j+'.fits')[0]
+                    print(len(hdu_fits.data))
+                    
                     data_surveys.append(hdu_fits.data)
-      
+                    print(data_surveys)
             hdu = fits.ImageHDU(data=data_surveys, name=f'SURVEY_{srv_inp}',header=hdu_fits.header)
             hdu.header['SURVEY'] = srv_inp
             hdu.header['NIMAGES'] = len(data_surveys) 
