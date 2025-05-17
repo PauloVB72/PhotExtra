@@ -137,7 +137,7 @@ class OBJECTS_IMG:
             gradient_threshold (float): Minimum gradient change to detect spikes.
     
         Returns:
-            np.ndarray: Binary mask with spikes masked.
+            np.ndarray: Binary mask with spikes masked.50178
         """
         mask = np.zeros_like(image, dtype=bool)
         x_center, y_center = center
